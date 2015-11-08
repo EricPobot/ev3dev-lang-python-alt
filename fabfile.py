@@ -39,7 +39,8 @@ env.password = 'x-files'
 
 env.use_ssh_config = True
 
-# env.pkg_format = 'egg'
+# default distribution package format
+env.pkg_format = 'sdist'
 
 pkg_meta = {
     'egg': {
@@ -89,6 +90,7 @@ def _archive_name():
 def make_all():
     """ Chains the 'build', 'deploy' and 'install' tasks (executed if fab command is used without argument)
     """
+    make_setup()
     build()
     deploy()
     install()
@@ -101,6 +103,16 @@ def make_setup():
         fp.write(src % {
             'version': git_version()
         })
+
+
+@task
+def egg():
+    env.pkg_format = 'egg'
+
+
+@task
+def sdist():
+    env.pkg_format = 'sdist'
 
 
 @task
