@@ -33,9 +33,6 @@ from git_version import git_version
 
 # change the hostname of the EV3 if needed
 env.hosts = ['ev3dev']
-# EV3 sudo password
-# env.password = 'x-f1135@eV3'
-env.password = 'x-files'
 
 env.use_ssh_config = True
 
@@ -80,10 +77,11 @@ def _archive_name():
     extracted from the setup() call
     """
     infos = _get_pkg_infos()
-    infos["name"] = infos["name"].replace('-', '_')
+    if env.pkg_format == 'egg':
+        infos["name"] = infos["name"].replace('-', '_')
     infos["arch_ext"] = pkg_meta[env.pkg_format]['arch_ext']
 
-    return '%(name)s-%(version)s-%(arch_ext)s' % infos
+    return '%(name)s-%(version)s%(arch_ext)s' % infos
 
 
 @task(default=True)
