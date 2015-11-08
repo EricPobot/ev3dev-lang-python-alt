@@ -1,4 +1,4 @@
-tn_# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Copyright (c) 2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
 # Copyright (c) 2015 Anton Vanhoucke <antonvh@gmail.com>
 # Copyright (c) 2015 Denis Demidov <dennis.demidov@gmail.com>
@@ -69,8 +69,8 @@ class FileCache(object):
 
     @staticmethod
     def _open_file(path, binary):
-        if not os.path.isfile(path):
-            raise ValueError('path not found')
+        if not os.path.exists(path):
+            raise ValueError('path not found: %s' % path)
 
         r_ok = os.access(path, os.R_OK)
         w_ok = os.access(path, os.W_OK)
@@ -461,7 +461,7 @@ class Led(Device):
 
 
 #: Used internally to define the buttons available on the target
-ButtonDefinition = namedtuple('ButtonDefinition', 'sysclass_path mask')
+ButtonDefinition = namedtuple('ButtonDefinition', 'input_path mask')
 
 
 class ButtonBase(object):
@@ -513,9 +513,11 @@ class ButtonBase(object):
 
         state_diff = new_state.symmetric_difference(old_state)
         for button in state_diff:
-            handler = getattr(self, 'on_' + button)
-            if handler:
+            try:
+                handler = getattr(self, 'on_' + button)
                 handler(button in new_state)
+            except AttributeError:
+                pass
 
         if state_diff and self.on_change:
             self.on_change([(button, button in new_state) for button in state_diff])
@@ -539,9 +541,9 @@ class ButtonEVIO(ButtonBase):
     def __init__(self):
         self._file_cache = FileCache()
         self._buffer_cache = {}
-        for b in self._buttons:
-            self._button_file(self._buttons[b]['name'])
-            self._button_buffer(self._buttons[b]['name'])
+        for btn_props in self._buttons.itervalues():
+            self._button_file(btn_props.input_path)
+            self._button_buffer(btn_props.input_path)
 
     def _button_file(self, name):
         return self._file_cache.file_handle(name)
@@ -562,7 +564,7 @@ class ButtonEVIO(ButtonBase):
 
         pressed = set()
         for btn_name, btn_props in self._buttons.items():
-            buf = self._buffer_cache[btn_props.sysclass_path]
+            buf = self._buffer_cache[btn_props.input_path]
             bit = btn_props.mask
             if not bool(buf[int(bit / 8)] & 1 << bit % 8):
                 pressed.add(btn_name)
