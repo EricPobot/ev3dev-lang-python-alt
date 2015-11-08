@@ -26,6 +26,8 @@
 """
 
 from .core import *
+from .motors import *
+from .sensors import *
 
 
 OUTPUT_A = 'outA'
