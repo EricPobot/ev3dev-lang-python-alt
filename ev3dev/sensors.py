@@ -3,7 +3,7 @@
 import os
 from struct import unpack
 
-from ev3dev.core import Device
+from ev3dev.core import Device, ButtonBase
 
 
 class Sensor(Device):
@@ -379,3 +379,84 @@ class TouchSensor(Sensor):
         if port is not None:
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-touch', 'lego-nxt-touch'], **kwargs)
+
+
+class RemoteControl(ButtonBase):
+    """
+    EV3 Remote Controller
+    """
+
+    _BUTTON_VALUES = {
+            0: [],
+            1: ['red_up'],
+            2: ['red_down'],
+            3: ['blue_up'],
+            4: ['blue_down'],
+            5: ['red_up', 'blue_up'],
+            6: ['red_up', 'blue_down'],
+            7: ['red_down', 'blue_up'],
+            8: ['red_down', 'blue_down'],
+            9: ['beacon'],
+            10: ['red_up', 'red_down'],
+            11: ['blue_up', 'blue_down']
+            }
+
+    on_red_up = None
+    on_red_down = None
+    on_blue_up = None
+    on_blue_down = None
+    on_beacon = None
+
+    @property
+    def red_up(self):
+        """
+        Checks if `red_up` button is pressed.
+        """
+        return 'red_up' in self.buttons_pressed
+
+    @property
+    def red_down(self):
+        """
+        Checks if `red_down` button is pressed.
+        """
+        return 'red_down' in self.buttons_pressed
+
+    @property
+    def blue_up(self):
+        """
+        Checks if `blue_up` button is pressed.
+        """
+        return 'blue_up' in self.buttons_pressed
+
+    @property
+    def blue_down(self):
+        """
+        Checks if `blue_down` button is pressed.
+        """
+        return 'blue_down' in self.buttons_pressed
+
+    @property
+    def beacon(self):
+        """
+        Checks if `beacon` button is pressed.
+        """
+        return 'beacon' in self.buttons_pressed
+
+    def __init__(self, sensor=None, channel=1):
+        if sensor is None:
+            self._sensor = InfraredSensor()
+        else:
+            self._sensor = sensor
+
+        self._channel = max(1, min(4, channel)) - 1
+        self._state = set([])
+
+        if self._sensor.connected:
+            self._sensor.mode = 'IR-REMOTE'
+
+    @property
+    def buttons_pressed(self):
+        """
+        Returns list of currently pressed buttons.
+        """
+        return RemoteControl._BUTTON_VALUES.get(self._sensor.value(self._channel), [])
