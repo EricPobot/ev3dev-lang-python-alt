@@ -61,7 +61,7 @@ class BaseMotor(Device):
 
     @property
     def polarity(self):
-        """ str: motor polarity.
+        """ int: motor polarity.
 
         With `normal` polarity, a positive duty cycle will cause the motor to rotate clockwise.
         With `inversed` polarity, a positive duty cycle will cause the motor to rotate counter-clockwise.
@@ -262,7 +262,7 @@ class DcMotor(BaseMotor):
         """Runs the motor until another command is sent.
 
         Args:
-            **kwargs: additional arguments for the command
+            \**kwargs: additional arguments for the command
         """
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -274,7 +274,7 @@ class DcMotor(BaseMotor):
 
         Args:
             time_sp (int): number of milliseconds to run the motor
-            **kwargs: additional options for the command
+            \**kwargs: additional options for the command
         """
         self.time_sp = time_sp
         for key in kwargs:
@@ -288,7 +288,7 @@ class DcMotor(BaseMotor):
 
         Args:
             duty_cycle_sp (int): target duty cycle
-            **kwargs: additional options for the command
+            \**kwargs: additional options for the command
         """
         self.duty_cycle_sp = duty_cycle_sp
         for key in kwargs:
@@ -301,7 +301,7 @@ class DcMotor(BaseMotor):
 
         Args:
             stop_command (str): stop_command if different from the previously set one
-            **kwargs: additional options for the command
+            \**kwargs: additional options for the command
         """
         if stop_command:
             self.stop_command = stop_command
@@ -506,7 +506,7 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
 
         Args:
             position_sp (int): the target position in encoder units
-            **kwargs: additional arguments for the command
+            \**kwargs: additional arguments for the command
         """
         self.position_sp = position_sp
         for key in kwargs:
@@ -521,7 +521,7 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
 
         Args:
             position_sp (int): the target position in encoder units
-            **kwargs: additional options for the command
+            \**kwargs: additional options for the command
         """
         self.position_sp = position_sp
         for key in kwargs:
