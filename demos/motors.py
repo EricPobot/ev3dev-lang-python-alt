@@ -24,9 +24,11 @@
 # -----------------------------------------------------------------------------
 
 import time
+from textwrap import wrap
+
 from ev3dev import ev3
 
-print('Runs motors connected to outputs B and C in sync')
+print(wrap("Runs motors connected to outputs B and C in sync", 20))
 
 motors = [ev3.LargeMotor(p) for p in ('outB', 'outC')]
 
@@ -38,22 +40,22 @@ for m in motors:
     m.ramp_up_sp = 500
     m.ramp_down_sp = 500
 
-print("let's make 2 turns forward :")
+print("2 turns forward :")
 for m in motors:
     m.run_to_rel_pos(position_sp=360 * 2)
 
-print('+ waiting for motion to complete...')
+print('+ waiting for end...')
 while m.state and 'holding' not in m.state:
     time.sleep(0.1)
 print('+ complete.')
 
 time.sleep(0.5)
 
-print('now, do the same backwards :')
+print('backwards now :')
 for m in motors:
     m.run_to_rel_pos(position_sp=-360 * 2)
 
-print('+ waiting for motion to complete...')
+print('+ waiting for end...')
 while m.state and 'holding' not in m.state:
     time.sleep(0.1)
 print('+ complete.')
@@ -63,3 +65,4 @@ for m in motors:
     m.reset()
 
 print("That's all folks.")
+time.sleep(5)
