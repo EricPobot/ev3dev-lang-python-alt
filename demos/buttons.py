@@ -21,7 +21,7 @@ class Demo(object):
     }
 
     def __init__(self):
-        self.ev3_buttons = ev3.Button()
+        self.ev3_buttons = ev3.Buttons()
         self.ev3_buttons.on_change = self.on_change
         self.ev3_buttons.on_back = self.on_back
 
@@ -39,7 +39,7 @@ class Demo(object):
             self.stdscr.refresh()
 
     def on_back(self, state):
-        self._display_button_state('back', state)
+        self._display_button_state(ev3.Buttons.BACK, state)
         self.stdscr.refresh()
 
         self.done = True
@@ -47,6 +47,9 @@ class Demo(object):
     def run(self):
         self.stdscr = curses.initscr()
         height, width = self.stdscr.getmaxyx()
+        # if width > 21:
+        #     for name, yx in self.btn_pos.iteritems():
+        #         self.btn_pos[name] = [2 * n for n in yx]
         curses.curs_set(0)
 
         for i, s in enumerate(['Press brick buttons', '(BACK to exit)']):

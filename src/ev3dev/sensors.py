@@ -3,7 +3,7 @@
 import os
 from struct import unpack
 
-from ev3dev.core import Device, ButtonBase
+from ev3dev.core import Device, ButtonManagerBase
 
 
 class Sensor(Device):
@@ -362,7 +362,7 @@ class TouchSensor(Sensor):
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-touch', 'lego-nxt-touch'], **kwargs)
 
 
-class RemoteControl(ButtonBase):
+class RemoteControl(ButtonManagerBase):
     """
     EV3 Remote Controller
     """

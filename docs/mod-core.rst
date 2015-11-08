@@ -20,8 +20,8 @@ Module interface
     Led
     PowerSupply
     Sound
-    ButtonBase
-    ButtonEVIO
+    ButtonManagerBase
+    ButtonManagerEVIO
 
 Reference
 ---------
@@ -35,11 +35,11 @@ Reference
 .. autoclass:: PowerSupply
     :members:
 
-.. autoclass:: ButtonBase
+.. autoclass:: ButtonManagerBase
     :members:
     :inherited-members:
 
-.. autoclass:: ButtonEVIO
+.. autoclass:: ButtonManagerEVIO
     :members:
     :inherited-members:
 

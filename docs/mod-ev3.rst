@@ -14,7 +14,7 @@ Module interface
     :nosignatures:
 
     Leds
-    Button
+    Buttons
 
 Reference
 ---------
@@ -23,6 +23,6 @@ Reference
     :members:
     :show-inheritance:
 
-.. autoclass:: Button
+.. autoclass:: Buttons
     :members:
     :show-inheritance:

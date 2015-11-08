@@ -104,11 +104,28 @@ class Leds(object):
         Leds.green_right.brightness = 0
 
 
-class Button(ButtonEVIO):
+class Buttons(ButtonManagerEVIO):
     """ EV3 Buttons.
 
-    The EV3 brick has 6 buttons.
+    This class defines the 6 EV3 buttons. Their default handlers are implemented as
+    empty methods.
+
+    It adds a property for each button returning its current state.
     """
+
+    #: Identifier of the "BACK" button
+    BACK = 'back'
+    #: Identifier of the "UP" button
+    UP = 'up'
+    #: Identifier of the "DOWN" button
+    DOWN = 'down'
+    #: Identifier of the "LEFT" button
+    LEFT = 'left'
+    #: Identifier of the "RIGHT" button
+    RIGHT = 'right'
+    #: Identifier of the "ENTER" button
+    ENTER = 'enter'
+
 
     @staticmethod
     def on_up(state):
@@ -175,12 +192,12 @@ class Button(ButtonEVIO):
         pass
 
     _buttons = {
-        'up': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 103),
-        'down': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 108),
-        'left': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 105),
-        'right': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 106),
-        'enter': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 28),
-        'back': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 14),
+        UP: ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 103),
+        DOWN: ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 108),
+        LEFT: ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 105),
+        RIGHT: ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 106),
+        ENTER: ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 28),
+        BACK: ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 14),
     }
 
     @property
@@ -189,7 +206,7 @@ class Button(ButtonEVIO):
 
         :type: bool
         """
-        return 'up' in self.buttons_pressed
+        return self.UP in self.buttons_pressed
 
     @property
     def down(self):
@@ -197,7 +214,7 @@ class Button(ButtonEVIO):
 
         :type: bool
         """
-        return 'down' in self.buttons_pressed
+        return self.DOWN in self.buttons_pressed
 
     @property
     def left(self):
@@ -205,7 +222,7 @@ class Button(ButtonEVIO):
 
         :type: bool
         """
-        return 'left' in self.buttons_pressed
+        return self.LEFT in self.buttons_pressed
 
     @property
     def right(self):
@@ -213,7 +230,7 @@ class Button(ButtonEVIO):
 
         :type: bool
         """
-        return 'right' in self.buttons_pressed
+        return self.RIGHT in self.buttons_pressed
 
     @property
     def enter(self):
@@ -221,7 +238,7 @@ class Button(ButtonEVIO):
 
         :type: bool
         """
-        return 'enter' in self.buttons_pressed
+        return self.ENTER in self.buttons_pressed
 
     @property
     def back(self):
@@ -229,4 +246,4 @@ class Button(ButtonEVIO):
 
         :type: bool
         """
-        return 'back' in self.buttons_pressed
+        return self.BACK in self.buttons_pressed

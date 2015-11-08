@@ -464,8 +464,9 @@ class Led(Device):
 ButtonDefinition = namedtuple('ButtonDefinition', 'input_path mask')
 
 
-class ButtonBase(object):
-    """ Abstract button interface.
+class ButtonManagerBase(object):
+    """ Abstract root class providing the services for interacting with
+    buttons available on the target.
 
     It is used for brick buttons, but also for remote command ones.
     """
@@ -473,7 +474,9 @@ class ButtonBase(object):
 
     @property
     def buttons_pressed(self):
-        """ The names of pressed buttons.
+        """ The list of buttons currently pressed.
+
+        It is returned as a set containing their names.
 
         :type: set[str]
         """
@@ -482,21 +485,30 @@ class ButtonBase(object):
     @staticmethod
     def on_change(changed_buttons):
         """ This handler is called by `process()` whenever state of any button has
-        changed since last `process()` call.
+        changed since last `process()` call. It can be overridden by application code
+        to attach a specific behavior to the buttons.
+
+        Examples:
+
+            >>> def handler(changed_buttons):
+            >>>     ...
+            >>>
+            >>> mgr = ButtonManagerBase()
+            >>> mgr.on_change = handler
 
         Args:
             changed_buttons (list[tuple[str, bool]]): the list of
-              tuples of changed button names and their states.
+                tuples of changed button names and their states.
         """
         pass
 
     def any(self):
-        """ Checks if any button is pressed.
+        """ Returns `True` if any button is pressed.
         """
         return bool(self.buttons_pressed)
 
     def check_buttons(self, buttons=None):
-        """ Checks if currently pressed buttons exactly match the given list.
+        """ Tests if all listed buttons are currently pressed.
 
         Args:
             buttons (set[str]): the list of expected pressed buttons
@@ -506,6 +518,17 @@ class ButtonBase(object):
     def process(self):
         """ Checks for currently pressed buttons. If the new state differs from the
         old state, call the appropriate button event handlers.
+
+        There are two kinds of handlers which can be defined:
+
+            - individual button handlers, connected to `on_<button_name>` slots
+            - global change handler, connected to `on_change` slot
+
+        Individual button handlers are called first, and then the global change handler.
+
+        Individual handlers are defined as empty methods in concrete classes implemented
+        a given platform. See :py:class:`ev3.Button` and :py:class:`brickpi.Button` for
+        examples.
         """
         new_state = self.buttons_pressed
         old_state = self._state
@@ -514,6 +537,7 @@ class ButtonBase(object):
         state_diff = new_state.symmetric_difference(old_state)
         for button in state_diff:
             try:
+                # invoke the button handler if defined
                 handler = getattr(self, 'on_' + button)
                 handler(button in new_state)
             except AttributeError:
@@ -523,8 +547,8 @@ class ButtonBase(object):
             self.on_change([(button, button in new_state) for button in state_diff])
 
 
-class ButtonEVIO(ButtonBase):
-    """ Provides a generic button reading mechanism that works with event interface
+class ButtonManagerEVIO(ButtonManagerBase):
+    """ Specialized button manager working with event interface
     and may be adapted to platform specific implementations.
 
     This implementation depends on the availability of the EVIOCGKEY ioctl
