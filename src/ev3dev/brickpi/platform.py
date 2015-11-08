@@ -24,9 +24,11 @@
 
 """
 An assortment of classes modeling specific features of the BrickPi.
+
+.. warning:: untested for the moment since not having a BrickPi
 """
 
-from .core import *
+from ..core import *
 
 
 OUTPUT_A = 'ttyAMA0:outA'
