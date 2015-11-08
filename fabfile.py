@@ -26,12 +26,16 @@ Fabric (http://www.fabfile.org/) file to automate operations for building
 the distribution archive, uploading it to the brick and installing there.
 """
 
-from fabric.api import env, put, sudo, local, task
+from fabric.api import env, put, sudo, run, local, task, prefix
+from fabvenv import virtualenv
+
+from git_version import git_version
 
 # change the hostname of the EV3 if needed
 env.hosts = ['ev3dev']
 # EV3 sudo password
-env.password = 'x-f1135@eV3'
+# env.password = 'x-f1135@eV3'
+env.password = 'x-files'
 
 env.use_ssh_config = True
 
@@ -59,7 +63,9 @@ def _archive_name():
     """ Returns the filename of the tar-gz archive, based on information
     extracted from the setup() call
     """
-    return '%(name)s-%(version)s.tar.gz' % _get_pkg_infos()
+    infos = _get_pkg_infos()
+    infos["name"] = infos["name"].replace('-', '_')
+    return '%(name)s-%(version)s-py2.7.egg' % infos
 
 
 @task(default=True)
@@ -75,7 +81,8 @@ def make_all():
 def build():
     """ Builds the distribution archive
     """
-    local('python setup.py sdist')
+    # local('python setup.py sdist')
+    local('python setup.py bdist_egg')
 
 
 @task
@@ -89,4 +96,6 @@ def deploy():
 def install():
     """ Installs the package on the EV3
     """
-    sudo('pip install %s -U' % _archive_name())
+    # sudo('pip install %s -U' % _archive_name())
+    with virtualenv('/home/eric/.virtualenvs/ev3dev'):
+        run('easy_install %s' % _archive_name())
