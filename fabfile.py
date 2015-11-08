@@ -26,7 +26,7 @@ Fabric (http://www.fabfile.org/) file to automate operations for building
 the distribution archive, uploading it to the brick and installing there.
 """
 
-from fabric.api import env, put, sudo, run, local, task, prefix
+from fabric.api import env, put, sudo, run, local, task, prefix, lcd
 from fabvenv import virtualenv
 
 from git_version import git_version
@@ -43,7 +43,7 @@ pkg_meta = {
     'egg': {
         'arch_ext': '-py2.7.egg',
         'build_cmd': 'bdist_egg',
-        'install_cmd': 'easy_install %s'
+        'install_cmd': 'easy_install -Z -U %s'
     },
     'sdist': {
         'arch_ext': '.tar.gz',
@@ -86,8 +86,9 @@ def _archive_name():
 
 @task(default=True)
 def make_all():
-    """ Chains the 'build', 'deploy' and 'install' tasks (executed if fab command is used without argument)
+    """ Chains all the operations (executed if fab command is used without argument)
     """
+    egg
     make_setup()
     build()
     deploy()
@@ -134,3 +135,9 @@ def install():
     # sudo('pip install %s -U' % _archive_name())
     with virtualenv('/home/eric/.virtualenvs/ev3dev'):
         run(pkg_meta[env.pkg_format]['install_cmd'] % _archive_name())
+
+
+@task
+def doc():
+    with lcd('docs'):
+        local('make clean html')
