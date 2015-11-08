@@ -32,8 +32,6 @@ import os.path
 import re
 from subprocess import Popen
 
-from ev3dev.sensors import InfraredSensor
-
 INPUT_AUTO = ''
 OUTPUT_AUTO = ''
 
@@ -86,6 +84,7 @@ class FileCache(object):
         if binary:
             mode += 'b'
 
+        print('opening %s with mode %s' % (path, mode))
         return open(path, mode, 0)
 
     def read(self, path):
@@ -193,10 +192,10 @@ class Device(object):
         for file_name in os.listdir(classpath):
             if fnmatch.fnmatch(file_name, name):
                 self._path = os.path.join(classpath, file_name)
+                self._attribute_cache = DeviceFileCache(self._path)
 
                 # See if all the requested attributes exist for the candidate device
                 if all([self._matches(k, kwargs[k]) for k in kwargs]):
-                    self._attribute_cache = DeviceFileCache(self._path)
                     self.connected = True
 
                     match = Device._DEVICE_INDEX.match(file_name)
@@ -482,93 +481,6 @@ class ButtonEVIO(ButtonBase):
         return pressed
 
 
-# ~autogen remote-control classes.infraredSensor.remoteControl>currentClass
-class RemoteControl(ButtonBase):
-    """
-    EV3 Remote Controller
-    """
-
-    _BUTTON_VALUES = {
-            0: [],
-            1: ['red_up'],
-            2: ['red_down'],
-            3: ['blue_up'],
-            4: ['blue_down'],
-            5: ['red_up', 'blue_up'],
-            6: ['red_up', 'blue_down'],
-            7: ['red_down', 'blue_up'],
-            8: ['red_down', 'blue_down'],
-            9: ['beacon'],
-            10: ['red_up', 'red_down'],
-            11: ['blue_up', 'blue_down']
-            }
-
-    on_red_up = None
-    on_red_down = None
-    on_blue_up = None
-    on_blue_down = None
-    on_beacon = None
-
-    @property
-    def red_up(self):
-        """
-        Checks if `red_up` button is pressed.
-        """
-        return 'red_up' in self.buttons_pressed
-
-    @property
-    def red_down(self):
-        """
-        Checks if `red_down` button is pressed.
-        """
-        return 'red_down' in self.buttons_pressed
-
-    @property
-    def blue_up(self):
-        """
-        Checks if `blue_up` button is pressed.
-        """
-        return 'blue_up' in self.buttons_pressed
-
-    @property
-    def blue_down(self):
-        """
-        Checks if `blue_down` button is pressed.
-        """
-        return 'blue_down' in self.buttons_pressed
-
-    @property
-    def beacon(self):
-        """
-        Checks if `beacon` button is pressed.
-        """
-        return 'beacon' in self.buttons_pressed
-
-
-# ~autogen
-
-    def __init__(self, sensor=None, channel=1):
-        if sensor is None:
-            self._sensor = InfraredSensor()
-        else:
-            self._sensor = sensor
-
-        self._channel = max(1, min(4, channel)) - 1
-        self._state = set([])
-
-        if self._sensor.connected:
-            self._sensor.mode = 'IR-REMOTE'
-
-    @property
-    def buttons_pressed(self):
-        """
-        Returns list of currently pressed buttons.
-        """
-        return RemoteControl._BUTTON_VALUES.get(self._sensor.value(self._channel), [])
-
-
-# ~autogen generic-class classes.powerSupply>currentClass
-
 class PowerSupply(Device):
 
     """
@@ -584,9 +496,6 @@ class PowerSupply(Device):
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
 
-
-# ~autogen
-# ~autogen generic-get-set classes.powerSupply>currentClass
 
     @property
     def measured_current(self):
@@ -626,9 +535,6 @@ class PowerSupply(Device):
         """
         return self.get_attr_string('type')
 
-
-# ~autogen
-
     @property
     def measured_amps(self):
         """
@@ -643,8 +549,6 @@ class PowerSupply(Device):
         """
         return self.measured_voltage / 1e6
 
-
-# ~autogen generic-class classes.legoPort>currentClass
 
 class LegoPort(Device):
 
@@ -683,10 +587,6 @@ class LegoPort(Device):
         if port is not None:
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
-
-
-# ~autogen
-# ~autogen generic-get-set classes.legoPort>currentClass
 
     @property
     def driver_name(self):
@@ -749,9 +649,6 @@ class LegoPort(Device):
         for the full list of possible values.
         """
         return self.get_attr_string('status')
-
-
-# ~autogen
 
 
 class Sound:
