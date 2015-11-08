@@ -49,6 +49,8 @@ Concrete classes
 
 .. autoclass:: DcMotor
     :members:
+    :show-inheritance:
 
 .. autoclass:: ServoMotor
     :members:
+    :show-inheritance:
