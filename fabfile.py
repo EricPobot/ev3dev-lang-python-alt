@@ -27,7 +27,6 @@ the distribution archive, uploading it to the brick and installing there.
 """
 
 from fabric.api import env, put, sudo, run, local, task, prefix, lcd
-from fabvenv import virtualenv
 
 from git_version import git_version
 
@@ -132,12 +131,16 @@ def deploy():
 def install():
     """ Installs the package on the EV3
     """
-    # sudo('pip install %s -U' % _archive_name())
-    with virtualenv('/home/eric/.virtualenvs/ev3dev'):
-        run(pkg_meta[env.pkg_format]['install_cmd'] % _archive_name())
+    cmde = pkg_meta[env.pkg_format]['install_cmd'] % _archive_name()
+    sudo(cmde)
 
 
 @task
 def doc():
     with lcd('docs'):
         local('make clean html')
+
+
+@task
+def demos():
+    put('demos/', mirror_local_mode=True)
