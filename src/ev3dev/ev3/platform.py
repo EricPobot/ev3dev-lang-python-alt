@@ -112,7 +112,7 @@ class Button(ButtonEVIO):
 
     @staticmethod
     def on_up(state):
-        """ This handler is called by `process()` whenever state of 'up' button
+        """ This handler is called by `process()` whenever state of 'UP' button
         has changed since last `process()` call.
 
         Args:
@@ -122,7 +122,7 @@ class Button(ButtonEVIO):
 
     @staticmethod
     def on_down(state):
-        """ This handler is called by `process()` whenever state of 'down' button
+        """ This handler is called by `process()` whenever state of 'DOWN' button
         has changed since last `process()` call.
 
         Args:
@@ -133,7 +133,7 @@ class Button(ButtonEVIO):
     @staticmethod
     def on_left(state):
         """
-        This handler is called by `process()` whenever state of 'left' button
+        This handler is called by `process()` whenever state of 'LEFT' button
         has changed since last `process()` call.
 
         Args:
@@ -144,7 +144,7 @@ class Button(ButtonEVIO):
     @staticmethod
     def on_right(state):
         """
-        This handler is called by `process()` whenever state of 'right' button
+        This handler is called by `process()` whenever state of 'RIGHT' button
         has changed since last `process()` call.
 
         Args:
@@ -155,7 +155,7 @@ class Button(ButtonEVIO):
     @staticmethod
     def on_enter(state):
         """
-        This handler is called by `process()` whenever state of 'enter' button
+        This handler is called by `process()` whenever state of 'ENTER' button
         has changed since last `process()` call.
 
         Args:
@@ -164,9 +164,9 @@ class Button(ButtonEVIO):
         pass
 
     @staticmethod
-    def on_backspace(state):
+    def on_back(state):
         """
-        This handler is called by `process()` whenever state of 'backspace' button
+        This handler is called by `process()` whenever state of 'BACK' button
         has changed since last `process()` call.
 
         Args:
