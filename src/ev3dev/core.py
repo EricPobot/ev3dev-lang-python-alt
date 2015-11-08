@@ -84,7 +84,7 @@ class FileCache(object):
         if binary:
             mode += 'b'
 
-        print('opening %s with mode %s' % (path, mode))
+        # print('opening %s with mode %s' % (path, mode))
         return open(path, mode, 0)
 
     def read(self, path):
