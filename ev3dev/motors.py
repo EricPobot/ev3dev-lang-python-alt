@@ -266,7 +266,7 @@ class DcMotor(BaseMotor):
         """
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        self.command = 'run-forever'
+        self.command = self.COMMAND_RUN_FOREVER
 
     def run_timed(self, time_sp, **kwargs):
         """ Runs the motor for the amount of time specified in `time_sp`
@@ -279,7 +279,7 @@ class DcMotor(BaseMotor):
         self.time_sp = time_sp
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        self.command = 'run-timed'
+        self.command = self.COMMAND_RUN_TIMED
 
     def run_direct(self, duty_cycle_sp, **kwargs):
         """ Runs the motor at the duty cycle specified by `duty_cycle_sp`.
@@ -293,7 +293,7 @@ class DcMotor(BaseMotor):
         self.duty_cycle_sp = duty_cycle_sp
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        self.command = 'run-direct'
+        self.command = self.COMMAND_RUN_DIRECT
 
     def stop(self, stop_command=None, **kwargs):
         """Stop any of the run commands before they are complete using the
@@ -307,7 +307,7 @@ class DcMotor(BaseMotor):
             self.stop_command = stop_command
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        self.command = 'stop'
+        self.command = self.COMMAND_STOP
 
 
 class RegulatedMotor(DcMotor, PositionControlMixin):
@@ -331,7 +331,7 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
     to convert encoder counts to/from rotations or degrees.
     """
 
-    SYSTEM_CLASS_NAME = 'encoder-motor'
+    SYSTEM_CLASS_NAME = 'tacho-motor'
     SYSTEM_DEVICE_NAME_CONVENTION = 'motor*'
 
     @property
@@ -511,7 +511,7 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
         self.position_sp = position_sp
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        self.command = 'run-to-abs-pos'
+        self.command = self.COMMAND_RUN_TO_ABS_POS
 
     def run_to_rel_pos(self, position_sp, **kwargs):
         """ Runs to a position relative to the current `position` value.
@@ -526,7 +526,7 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
         self.position_sp = position_sp
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        self.command = 'run-to-rel-pos'
+        self.command = self.COMMAND_RUN_TO_REL_POS
 
     def reset(self, **kwargs):
         """Reset all of the motor parameter attributes to their default value.
@@ -534,7 +534,7 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
         """
         for key in kwargs:
             setattr(self, key, kwargs[key])
-        self.command = 'reset'
+        self.command = self.COMMAND_RESET
 
 
 class LargeMotor(RegulatedMotor):
