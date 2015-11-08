@@ -557,12 +557,10 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
             setattr(self, key, kwargs[key])
         self.command = self.COMMAND_RUN_TO_REL_POS
 
-    def reset(self, **kwargs):
+    def reset(self):
         """ Resets all of the motor parameter attributes to their default value.
         This will also have the effect of stopping the motor.
         """
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
         self.command = self.COMMAND_RESET
 
 
