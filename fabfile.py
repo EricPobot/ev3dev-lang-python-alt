@@ -39,6 +39,21 @@ env.password = 'x-files'
 
 env.use_ssh_config = True
 
+# env.pkg_format = 'egg'
+
+pkg_meta = {
+    'egg': {
+        'arch_ext': '-py2.7.egg',
+        'build_cmd': 'bdist_egg',
+        'install_cmd': 'easy_install %s'
+    },
+    'sdist': {
+        'arch_ext': '.tar.gz',
+        'build_cmd': 'sdist',
+        'install_cmd': 'pip install %s -U'
+    }
+}
+
 
 def _get_pkg_infos():
     """ Returns a dictionary containing the setup() function arguments.
@@ -60,12 +75,14 @@ def _get_pkg_infos():
 
 
 def _archive_name():
-    """ Returns the filename of the tar-gz archive, based on information
+    """ Returns the filename of the distribution file, based on information
     extracted from the setup() call
     """
     infos = _get_pkg_infos()
     infos["name"] = infos["name"].replace('-', '_')
-    return '%(name)s-%(version)s-py2.7.egg' % infos
+    infos["arch_ext"] = pkg_meta[env.pkg_format]['arch_ext']
+
+    return '%(name)s-%(version)s-%(arch_ext)s' % infos
 
 
 @task(default=True)
@@ -78,11 +95,19 @@ def make_all():
 
 
 @task
+def make_setup():
+    src = ''.join(file('setup-template.py').readlines())
+    with file('setup.py', 'w') as fp:
+        fp.write(src % {
+            'version': git_version()
+        })
+
+
+@task
 def build():
     """ Builds the distribution archive
     """
-    # local('python setup.py sdist')
-    local('python setup.py bdist_egg')
+    local('python setup.py %s' % pkg_meta[env.pkg_format]['build_cmd'])
 
 
 @task
@@ -98,4 +123,4 @@ def install():
     """
     # sudo('pip install %s -U' % _archive_name())
     with virtualenv('/home/eric/.virtualenvs/ev3dev'):
-        run('easy_install %s' % _archive_name())
+        run(pkg_meta[env.pkg_format]['install_cmd'] % _archive_name())

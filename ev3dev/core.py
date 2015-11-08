@@ -181,8 +181,8 @@ class Device(object):
 
         Examples:
 
-            >>> d = ev3dev.Device('tacho-motor', port_name='outA')
-            >>> s = ev3dev.Device('lego-sensor', driver_name=['lego-ev3-us', 'lego-nxt-us'])
+            >>> d = Device('tacho-motor', port_name='outA')
+            >>> s = Device('lego-sensor', driver_name=['lego-ev3-us', 'lego-nxt-us'])
 
         When connected successfully, the `connected` attribute is set to True.
         """
@@ -236,40 +236,69 @@ class Device(object):
         """Internal device attribute setter"""
         self._attribute_cache.write(attribute, value)
 
+    # TODO do we need get/set_attr_xxx methods in Python ?
     def get_attr_int(self, attribute):
         """ Gets the value of an integer type attribute.
+
         Args:
             attribute (str): attribute name
 
         Returns:
             int: attribute value
-
         """
-        # TODO do we need such method in Python ?
         return int(self._get_attribute(attribute))
 
     def set_attr_int(self, attribute, value):
+        """ Sets the value of an integer type attribute.
+
+        The method ensures the passed value is an integer.
+
+        Args:
+            attribute (str): attribute name
+            value (int): attribute value
+
+        Raises:
+            ValueError: if the value is not an integer
+        """
         self._set_attribute(attribute, str(int(value)))
 
     def get_attr_string(self, attribute):
+        """ Gets the value of a string type attribute.
+
+        Args:
+            attribute (str): attribute name
+
+        Returns:
+            str: attribute value
+        """
         return self._get_attribute(attribute)
 
     def set_attr_string(self, attribute, value):
+        """ Sets the value of a string type attribute.
+
+        The method ensures the written value is a string. In fact any
+        type can be passed, since the value is converted to a string
+        before writing.
+
+        Args:
+            attribute (str): attribute name
+            value: attribute value
+
+        Raises:
+            ValueError: if the value is not an integer
+        """
         self._set_attribute(attribute, str(value))
 
-    def get_attr_line(self, attribute):
-        # TODO what is this method useful for ?
-        return self._get_attribute(attribute)
-
     def get_attr_set(self, attribute):
-        return [v.strip('[]') for v in self.get_attr_line(attribute).split()]
+        """ Gets the value of a set type attribute.
 
-    def get_attr_from_set(self, attribute):
-        for a in self.get_attr_line(attribute).split():
-            v = a.strip('[]')
-            if v != a:
-                return v
-        return ""
+        Args:
+            attribute (str): attribute name
+
+        Returns:
+            list: attribute value
+        """
+        return self._attribute_cache.read(attribute).split()
 
     @property
     def device_index(self):

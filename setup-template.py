@@ -1,10 +1,8 @@
 from setuptools import setup
-from git_version import git_version
-
 
 setup(
     name='python-ev3dev-ep',
-    version=git_version(),
+    version='%(version)s',
     description='Python language bindings for ev3dev',
     author='Eric Pascual',
     author_email='eric@pobot.org',
