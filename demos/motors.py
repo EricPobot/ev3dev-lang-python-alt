@@ -34,7 +34,7 @@ motors = [ev3.LargeMotor(p) for p in ('outB', 'outC')]
 for m in motors:
     m.reset()
     m.duty_cycle_sp = 100
-    m.stop_command = ev3.Motor.STOP_COMMAND_BRAKE
+    m.stop_command = ev3.LargeMotor.STOP_COMMAND_BRAKE
     m.ramp_up_sp = 500
     m.ramp_down_sp = 500
 
