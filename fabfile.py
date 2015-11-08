@@ -37,7 +37,7 @@ env.hosts = ['ev3dev']
 env.use_ssh_config = True
 
 # default distribution package format
-env.pkg_format = 'sdist'
+env.pkg_format = 'egg'
 
 pkg_meta = {
     'egg': {
@@ -88,7 +88,7 @@ def _archive_name():
 def make_all():
     """ Chains all the operations (executed if fab command is used without argument)
     """
-    egg
+    egg()
     make_setup()
     build()
     deploy()
