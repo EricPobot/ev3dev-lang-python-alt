@@ -103,11 +103,19 @@ class DcMotor(BaseMotor):
         - `stop` will stop any of the run commands before they are complete using the
           command specified by `stop_command`.
 
-    These commands are available as the contants named `COMMAND_xxx`.
+    These commands are available as the constants named `COMMAND_xxx`.
+
+    The duty cycle is initialized to 75 so that instances are ready to use after
+    their instantiation.
     """
 
     SYSTEM_CLASS_NAME = 'dc-motor'
     SYSTEM_DEVICE_NAME_CONVENTION = 'motor*'
+
+    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
+        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
+        if 'duty_cycle_sp' not in kwargs:
+            self.duty_cycle_sp = 75
 
     @property
     def duty_cycle(self):
