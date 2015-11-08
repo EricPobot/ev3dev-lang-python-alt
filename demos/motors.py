@@ -26,7 +26,7 @@
 import time
 from ev3dev import ev3
 
-print('Runs motors connected to out B and C in sync")')
+print('Runs motors connected to outputs B and C in sync')
 
 motors = [ev3.LargeMotor(p) for p in ('outB', 'outC')]
 

@@ -45,45 +45,21 @@ class Sensor(Device):
         self._bin_data_size = None
 
     @property
-    def command(self):
-        """ str: sensor command
-
-        This property is write-only.
-        """
-        raise Exception("command is a write-only property!")
-
-    @command.setter
-    def command(self, value):
-        self.set_attr_string('command', value)
-
-    @property
-    def commands(self):
-        """ list[str]: the list of the valid commands for the sensor.
-
-        Returns -EOPNOTSUPP if no commands are supported.
-        """
-        return self.get_attr_set('commands')
-
-    @property
     def decimals(self):
-        """ int: the number of decimal places for the values in the `value<N>`
+        """ The number of decimal places for the values in the `value<N>`
         attributes of the current mode.
+
+        :type: int
         """
         return self.get_attr_int('decimals')
 
     @property
-    def driver_name(self):
-        """ str: the name of the sensor device/driver.
-
-        See the list of [supported sensors] for a complete list of drivers.
-        """
-        return self.get_attr_string('driver_name')
-
-    @property
     def mode(self):
-        """ str: the current mode.
+        """ The current mode.
 
         Writing one of the values returned by `modes` sets the sensor to that mode.
+
+        :type: str
         """
         return self.get_attr_string('mode')
 
@@ -93,29 +69,27 @@ class Sensor(Device):
 
     @property
     def modes(self):
-        """ list[str]: the list of the valid modes for the sensor.
+        """ The list of the valid modes for the sensor.
+
+        :type: list[str]
         """
         return self.get_attr_set('modes')
 
     @property
     def num_values(self):
-        """ int: the number of `value<N>` attributes that will return a valid value
+        """ The number of `value<N>` attributes that will return a valid value
         for the current mode.
+
+        :type: int
         """
         return self.get_attr_int('num_values')
 
     @property
-    def port_name(self):
-        """ str:the name of the port the sensor is connected to, e.g. `ev3:in1`.
-
-        I2C sensors also include the I2C address (decimal), e.g. `ev3:in1:i2c8`.
-        """
-        return self.get_attr_string('port_name')
-
-    @property
     def units(self):
-        """ str: the units of the measured value for the current mode. May return
+        """ The units of the measured value for the current mode. May return
         an empty string
+
+        :type: str
         """
         return self.get_attr_string('units')
 
@@ -135,17 +109,21 @@ class Sensor(Device):
 
     @property
     def bin_data_format(self):
-        """ str: the format of the values in `bin_data` for the current mode.
+        """ The format of the values in `bin_data` for the current mode.
 
-        Possible values are:
+        Available formats:
 
-        - `u8`: Unsigned 8-bit integer (byte)
-        - `s8`: Signed 8-bit integer (sbyte)
-        - `u16`: Unsigned 16-bit integer (ushort)
-        - `s16`: Signed 16-bit integer (short)
-        - `s16_be`: Signed 16-bit integer, big endian
-        - `s32`: Signed 32-bit integer (int)
-        - `float`: IEEE 754 32-bit floating point (float)
+        ==========  ===============================================
+        `u8`        Unsigned 8-bit integer (byte)
+        `s8`        Signed 8-bit integer (sbyte)
+        `u16`       Unsigned 16-bit integer (ushort)
+        `s16`       Signed 16-bit integer (short)
+        `s16_be`    Signed 16-bit integer, big endian
+        `s32`       Signed 32-bit integer (int)
+        `float`     IEEE 754 32-bit floating point (float)
+        ==========  ===============================================
+
+        :type: str
         """
         return self.get_attr_string('bin_data_format')
 
@@ -193,19 +171,22 @@ class I2cSensor(Sensor):
 
     @property
     def fw_version(self):
-        """
-        Returns the firmware version of the sensor if available. Currently only
+        """ The firmware version of the sensor if available. Currently only
         I2C/NXT sensors support this.
+
+        :type: str
         """
         return self.get_attr_string('fw_version')
 
     @property
     def poll_ms(self):
-        """ int: the polling period of the sensor in milliseconds.
+        """ The polling period of the sensor in milliseconds.
 
         Setting it to 0 disables polling. The minimum value is hard
         coded as 50 msec. Returns -EOPNOTSUPP if changing polling is not supported.
         Currently only I2C/NXT sensors support changing the polling period.
+
+        :type: int
         """
         return self.get_attr_int('poll_ms')
 
@@ -226,19 +207,19 @@ class ColorSensor(Sensor):
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-color'], **kwargs)
 
-    # Reflected light. Red LED on.
+    #: Reflected light. Red LED on.
     MODE_COL_REFLECT = 'COL-REFLECT'
 
-    # Ambient light. Red LEDs off.
+    #: Ambient light. Red LEDs off.
     MODE_COL_AMBIENT = 'COL-AMBIENT'
 
-    # Color. All LEDs rapidly cycling, appears white.
+    #: Color. All LEDs rapidly cycling, appears white.
     MODE_COL_COLOR = 'COL-COLOR'
 
-    # Raw reflected. Red LED on
+    #: Raw reflected. Red LED on
     MODE_REF_RAW = 'REF-RAW'
 
-    # Raw Color Components. All LEDs rapidly cycling, appears white.
+    #: Raw Color Components. All LEDs rapidly cycling, appears white.
     MODE_RGB_RAW = 'RGB-RAW'
 
 
@@ -254,23 +235,23 @@ class UltrasonicSensor(Sensor):
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-us', 'lego-nxt-us'], **kwargs)
 
-    # Continuous measurement in centimeters.
-    # LEDs: On, steady
+    #: Continuous measurement in centimeters.
+    #: LEDs: On, steady
     MODE_US_DIST_CM = 'US-DIST-CM'
 
-    # Continuous measurement in inches.
-    # LEDs: On, steady
+    #: Continuous measurement in inches.
+    #: LEDs: On, steady
     MODE_US_DIST_IN = 'US-DIST-IN'
 
-    # Listen.  LEDs: On, blinking
+    #: Listen.  LEDs: On, blinking
     MODE_US_LISTEN = 'US-LISTEN'
 
-    # Single measurement in centimeters.
-    # LEDs: On momentarily when mode is set, then off
+    #: Single measurement in centimeters.
+    #: LEDs: On momentarily when mode is set, then off
     MODE_US_SI_CM = 'US-SI-CM'
 
-    # Single measurement in inches.
-    # LEDs: On momentarily when mode is set, then off
+    #: Single measurement in inches.
+    #: LEDs: On momentarily when mode is set, then off
     MODE_US_SI_IN = 'US-SI-IN'
 
 
@@ -286,19 +267,19 @@ class GyroSensor(Sensor):
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-gyro'], **kwargs)
 
-    # Angle
+    #: Angle
     MODE_GYRO_ANG = 'GYRO-ANG'
 
-    # Rotational speed
+    #: Rotational speed
     MODE_GYRO_RATE = 'GYRO-RATE'
 
-    # Raw sensor value
+    #: Raw sensor value
     MODE_GYRO_FAS = 'GYRO-FAS'
 
-    # Angle and rotational speed
+    #: Angle and rotational speed
     MODE_GYRO_G_A = 'GYRO-G&A'
 
-    # Calibration ???
+    #: Calibration ???
     MODE_GYRO_CAL = 'GYRO-CAL'
 
 
@@ -314,19 +295,19 @@ class InfraredSensor(Sensor):
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-ir'], **kwargs)
 
-    # Proximity
+    #: Proximity
     MODE_IR_PROX = 'IR-PROX'
 
-    # IR Seeker
+    #: IR Seeker
     MODE_IR_SEEK = 'IR-SEEK'
 
-    # IR Remote Control
+    #: IR Remote Control
     MODE_IR_REMOTE = 'IR-REMOTE'
 
-    # IR Remote Control. State of the buttons is coded in binary
+    #: IR Remote Control. State of the buttons is coded in binary
     MODE_IR_REM_A = 'IR-REM-A'
 
-    # Calibration ???
+    #: Calibration ???
     MODE_IR_CAL = 'IR-CAL'
 
 
@@ -342,10 +323,10 @@ class SoundSensor(Sensor):
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-nxt-sound'], **kwargs)
 
-    # Sound pressure level. Flat weighting
+    #: Sound pressure level. Flat weighting
     MODE_DB = 'DB'
 
-    # Sound pressure level. A weighting
+    #: Sound pressure level. A weighting
     MODE_DBA = 'DBA'
 
 
@@ -361,10 +342,10 @@ class LightSensor(Sensor):
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-nxt-light'], **kwargs)
 
-    # Reflected light. LED on
+    #: Reflected light. LED on
     MODE_REFLECT = 'REFLECT'
 
-    # Ambient light. LED off
+    #: Ambient light. LED off
     MODE_AMBIENT = 'AMBIENT'
 
 

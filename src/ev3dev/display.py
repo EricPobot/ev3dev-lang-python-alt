@@ -184,6 +184,8 @@ class Screen(FbMem):
     @property
     def shape(self):
         """ Dimensions of the screen.
+
+        :type: tuple[int, int]
         """
         return self.xres, self.yres
 

@@ -1,4 +1,4 @@
-# -----------------------------------------------------------------------------
+tn_# -----------------------------------------------------------------------------
 # Copyright (c) 2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
 # Copyright (c) 2015 Anton Vanhoucke <antonvh@gmail.com>
 # Copyright (c) 2015 Denis Demidov <dennis.demidov@gmail.com>
@@ -31,6 +31,7 @@ import os
 import os.path
 import re
 from subprocess import Popen
+from collections import namedtuple
 
 INPUT_AUTO = ''
 OUTPUT_AUTO = ''
@@ -165,7 +166,7 @@ class Device(object):
     _DEVICE_INDEX = re.compile(r'^.*(?P<idx>\d+)$')
 
     def __init__(self, class_name, name='*', **kwargs):
-        """Spin through the Linux sysfs class for the device type and find
+        """Spin through the Linux `sysfs` class for the device type and find
         a device that matches the provided name and attributes (if any).
 
         Args:
@@ -229,11 +230,11 @@ class Device(object):
             return value.find(pattern) >= 0
 
     def _get_attribute(self, attribute):
-        """Internal device attribute getter"""
+        """ Internal device attribute getter """
         return self._attribute_cache.read(attribute)
 
     def _set_attribute(self, attribute, value):
-        """Internal device attribute setter"""
+        """ Internal device attribute setter """
         self._attribute_cache.write(attribute, value)
 
     # TODO do we need get/set_attr_xxx methods in Python ?
@@ -303,6 +304,50 @@ class Device(object):
     @property
     def device_index(self):
         return self._device_index
+
+    @property
+    def command(self):
+        """ command sent to the motor controller. See `commands` for a list of
+        possible values.
+
+        .. Important:: This is a write-only property.
+
+        :type: str
+        """
+        raise Exception("command is a write-only property!")
+
+    @command.setter
+    def command(self, value):
+        self.set_attr_string('command', value)
+
+    @property
+    def commands(self):
+        """ The list of commands that are supported by the motor
+        controller.
+
+        Refer to sub-classes documentation for details about their available commands.
+
+        :type: list[str]
+        """
+        return self.get_attr_set('commands')
+
+    @property
+    def port_name(self):
+        """ The name of the port that the device is connected to.
+
+        I2C sensors also include the I2C address (decimal), e.g. `ev3:in1:i2c8`.
+
+        :type: str
+        """
+        return self.get_attr_string('port_name')
+
+    @property
+    def driver_name(self):
+        """ The name of the driver for this device.
+
+        :type: str
+        """
+        return self.get_attr_string('driver_name')
 
 
 class Led(Device):
@@ -415,56 +460,69 @@ class Led(Device):
         self.brightness = value * self.max_brightness
 
 
+#: Used internally to define the buttons available on the target
+ButtonDefinition = namedtuple('ButtonDefinition', 'sysclass_path mask')
+
+
 class ButtonBase(object):
+    """ Abstract button interface.
+
+    It is used for brick buttons, but also for remote command ones.
     """
-    Abstract button interface.
-    """
+    _state = set()
+
+    @property
+    def buttons_pressed(self):
+        """ The names of pressed buttons.
+
+        :type: set[str]
+        """
+        raise NotImplementedError()
 
     @staticmethod
     def on_change(changed_buttons):
-        """
-        This handler is called by `process()` whenever state of any button has
-        changed since last `process()` call. `changed_buttons` is a list of
-        tuples of changed button names and their states.
+        """ This handler is called by `process()` whenever state of any button has
+        changed since last `process()` call.
+
+        Args:
+            changed_buttons (list[tuple[str, bool]]): the list of
+              tuples of changed button names and their states.
         """
         pass
 
-    _state = set([])
-
     def any(self):
-        """
-        Checks if any button is pressed.
+        """ Checks if any button is pressed.
         """
         return bool(self.buttons_pressed)
 
-    def check_buttons(self, buttons=[]):
+    def check_buttons(self, buttons=None):
+        """ Checks if currently pressed buttons exactly match the given list.
+
+        Args:
+            buttons (set[str]): the list of expected pressed buttons
         """
-        Check if currently pressed buttons exactly match the given list.
-        """
-        return set(self.buttons_pressed) == set(buttons)
+        return self.buttons_pressed == set(buttons or [])
 
     def process(self):
-        """
-        Check for currenly pressed buttons. If the new state differs from the
+        """ Checks for currently pressed buttons. If the new state differs from the
         old state, call the appropriate button event handlers.
         """
-        new_state = set(self.buttons_pressed)
+        new_state = self.buttons_pressed
         old_state = self._state
         self._state = new_state
 
         state_diff = new_state.symmetric_difference(old_state)
         for button in state_diff:
             handler = getattr(self, 'on_' + button)
-            if handler is not None: handler(button in new_state)
+            if handler:
+                handler(button in new_state)
 
-        if self.on_change is not None and state_diff:
+        if state_diff and self.on_change:
             self.on_change([(button, button in new_state) for button in state_diff])
 
 
 class ButtonEVIO(ButtonBase):
-
-    """
-    Provides a generic button reading mechanism that works with event interface
+    """ Provides a generic button reading mechanism that works with event interface
     and may be adapted to platform specific implementations.
 
     This implementation depends on the availability of the EVIOCGKEY ioctl
@@ -495,25 +553,24 @@ class ButtonEVIO(ButtonBase):
 
     @property
     def buttons_pressed(self):
-        """
-        Returns list of names of pressed buttons.
+        """ The names of pressed buttons.
+
+        :type: set[str]
         """
         for b in self._buffer_cache:
             fcntl.ioctl(self._button_file(b), self.EVIOCGKEY, self._buffer_cache[b])
 
-        pressed = []
-        for k, v in self._buttons.items():
-            buf = self._buffer_cache[v['name']]
-            bit = v['value']
+        pressed = set()
+        for btn_name, btn_props in self._buttons.items():
+            buf = self._buffer_cache[btn_props.sysclass_path]
+            bit = btn_props.mask
             if not bool(buf[int(bit / 8)] & 1 << bit % 8):
-                pressed += [k]
+                pressed.add(btn_name)
         return pressed
 
 
 class PowerSupply(Device):
-
-    """
-    A generic interface to read data from the system's power_supply class.
+    """ A generic interface to read data from the system's power_supply class.
     Uses the built-in legoev3-battery if none is specified.
     """
 
@@ -525,62 +582,72 @@ class PowerSupply(Device):
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
 
-
     @property
     def measured_current(self):
-        """
-        The measured current that the battery is supplying (in microamps)
+        """ The measured current that the battery is supplying (in microamps)
+
+        :type: int
         """
         return self.get_attr_int('current_now')
 
     @property
     def measured_voltage(self):
-        """
-        The measured voltage that the battery is supplying (in microvolts)
+        """ The measured voltage that the battery is supplying (in microvolts)
+
+        :type: int
         """
         return self.get_attr_int('voltage_now')
 
     @property
     def max_voltage(self):
-        """
+        """ The maximum voltage of the battery (in microvolts)
+
+        :type: int
         """
         return self.get_attr_int('voltage_max_design')
 
     @property
     def min_voltage(self):
-        """
+        """ The minimum voltage of the battery (in microvolts)
+
+        :type: int
         """
         return self.get_attr_int('voltage_min_design')
 
     @property
     def technology(self):
-        """
+        """ The power supply technology (e.g. `Li-ion`).
+
+        :type: str
         """
         return self.get_attr_string('technology')
 
     @property
     def type(self):
-        """
+        """ The type of power supply (e.g. `battery`).
+
+        :type: str
         """
         return self.get_attr_string('type')
 
     @property
     def measured_amps(self):
-        """
-        The measured current that the battery is supplying (in amps)
+        """ The measured current that the battery is supplying (in amps)
+
+        :type: float
         """
         return self.measured_current / 1e6
 
     @property
     def measured_volts(self):
-        """
-        The measured voltage that the battery is supplying (in volts)
+        """ The measured voltage that the battery is supplying (in volts)
+
+        :type: float
         """
         return self.measured_voltage / 1e6
 
 
 class LegoPort(Device):
-
     """
     The `lego-port` class provides an interface for working with input and
     output ports that are compatible with LEGO MINDSTORMS RCX/NXT/EV3, LEGO
@@ -618,27 +685,22 @@ class LegoPort(Device):
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
 
     @property
-    def driver_name(self):
-        """
-        Returns the name of the driver that loaded this device. You can find the
-        complete list of drivers in the [list of port drivers].
-        """
-        return self.get_attr_string('driver_name')
-
-    @property
     def modes(self):
-        """
-        Returns a list of the available modes of the port.
+        """ The list of the available modes of the port.
+
+        :type: list[str]
         """
         return self.get_attr_set('modes')
 
     @property
     def mode(self):
-        """
-        Reading returns the currently selected mode. Writing sets the mode.
+        """ The port mode.
+
         Generally speaking when the mode changes any sensor or motor devices
         associated with the port will be removed new ones loaded, however this
         this will depend on the individual driver implementing this class.
+
+        :type: str
         """
         return self.get_attr_string('mode')
 
@@ -647,21 +709,17 @@ class LegoPort(Device):
         self.set_attr_string('mode', value)
 
     @property
-    def port_name(self):
-        """
-        Returns the name of the port. See individual driver documentation for
-        the name that will be returned.
-        """
-        return self.get_attr_string('port_name')
-
-    @property
     def set_device(self):
-        """
-        For modes that support it, writing the name of a driver will cause a new
+        """ For modes that support it, writing the name of a driver will cause a new
         device to be registered for that driver and attached to this port. For
         example, since NXT/Analog sensors cannot be auto-detected, you must use
-        this attribute to load the correct driver. Returns -EOPNOTSUPP if setting a
-        device is not supported.
+        this attribute to load the correct driver.
+
+        Returns -EOPNOTSUPP if setting a device is not supported.
+
+        .. important:: This is a write-only property
+
+        :type: str
         """
         raise Exception("set_device is a write-only property!")
 
@@ -671,40 +729,43 @@ class LegoPort(Device):
 
     @property
     def status(self):
-        """
-        In most cases, reading status will return the same value as `mode`. In
-        cases where there is an `auto` mode additional values may be returned,
+        """ In most cases, the status is the same value as `mode`.
+
+        In cases where there is an `auto` mode additional values may be returned,
         such as `no-device` or `error`. See individual port driver documentation
         for the full list of possible values.
+
+        :type: str
         """
         return self.get_attr_string('status')
 
 
 class Sound:
-    """
-    Sound-related functions. The class has only static methods and is not
+    """ Sound-related functions. The class has only static methods and is not
     intended for instantiation. It can beep, play wav files, or convert text to
     speech.
 
     Note that all methods of the class spawn system processes and return
-    subprocess.Popen objects. The methods are asynchronous (they return
+    :py:class:`subprocess.Popen` objects. The methods are asynchronous (they return
     immediately after child process was spawned, without waiting for its
     completion), but you can call wait() on the returned result.
 
-    Examples::
+    Example::
 
-        # Play 'bark.wav', return immediately:
-        Sound.play('bark.wav')
-
-        # Introduce yourself, wait for completion:
-        Sound.speak('Hello, I am Robot').wait()
+        >>> # Play 'bark.wav', return immediately:
+        >>> Sound.play('bark.wav')
+        >>>
+        >>> # Introduce yourself, wait for completion:
+        >>> Sound.speak('Hello, I am Robot').wait()
     """
 
     @staticmethod
     def beep(args=''):
-        """
-        Call beep command with the provided arguments (if any).
+        """ Calls the beep command with the provided arguments (if any).
         See `beep man page`_ and google 'linux beep music' for inspiration.
+
+        Args:
+            args (str): arguments passed to the `beep` command
 
         .. _`beep man page`: http://manpages.debian.org/cgi-bin/man.cgi?query=beep
         """
@@ -713,14 +774,24 @@ class Sound:
 
     @staticmethod
     def tone(*args):
-        """
-        tone(tone_sequence):
+        """ Plays a tone or a tones sequence.
 
-        Play tone sequence. The tone_sequence parameter is a list of tuples,
-        where each tuple contains up to three numbers. The first number is
-        frequency in Hz, the second is duration in milliseconds, and the third
-        is delay in milliseconds between this and the next tone in the
-        sequence.
+        **Single tone play**
+
+        Args:
+            frequency (int): tone frequency (Hz)
+            duration (int): tone duration (ms)
+
+        Simple example::
+
+            Sound.tone(440, 1000)
+
+        **Song play**
+
+        Args:
+            notes (list[tuple[int,int,int]]): the song notes, as triplets containing
+                the frequency (Hz), the duration (ms) and the delay (ms) between
+                this note and the next one
 
         Here is a cheerful example::
 
@@ -744,19 +815,15 @@ class Sound:
                 (392, 350, 100), (311.13, 250, 100), (466.16, 25, 100),
                 (392.00, 300, 150), (311.13, 250, 100), (466.16, 25, 100), (392, 700)
                 ]).wait()
-
-        tone(frequency, duration):
-
-        Play single tone of given frequency (Hz) and duration (milliseconds).
         """
         def play_tone_sequence(tone_sequence):
             def beep_args(frequency=None, duration=None, delay=None):
-                args = '-n '
-                if frequency is not None: args += '-f %s ' % frequency
-                if duration  is not None: args += '-l %s ' % duration
-                if delay     is not None: args += '-d %s ' % delay
+                _args = '-n '
+                if frequency is not None: _args += '-f %s ' % frequency
+                if duration  is not None: _args += '-l %s ' % duration
+                if delay     is not None: _args += '-d %s ' % delay
 
-                return args
+                return _args
 
             return Sound.beep(' '.join([beep_args(*t) for t in tone_sequence]))
 
@@ -769,16 +836,34 @@ class Sound:
 
     @staticmethod
     def play(wav_file):
-        """
-        Play wav file.
+        """ Plays a WAV file.
+
+        Args:
+            wav_file (str): the path of the WAV file
         """
         with open(os.devnull, 'w') as n:
             return Popen('/usr/bin/aplay -q "%s"' % wav_file, stdout=n, shell=True)
 
     @staticmethod
-    def speak(text):
-        """
-        Speak the given text aloud.
+    def speak(text, amplitude=200, speed=175, voice='en', espeak_options=''):
+        """ Speaks the given text aloud.
+
+        Args:
+            text (str): the text to speak
+            amplitude (int): the voice amplitude. Default to 200
+            speed (int): speech speed, in words per minute. Default to 175
+            voice (str): the voice code (see content of `espeak-data/voices` for the list). Default to `en`
+            espeak_options (str): additional espeak options, as described in documentation
         """
         with open(os.devnull, 'w') as n:
-            return Popen('/usr/bin/espeak -a 200 --stdout "%s" | /usr/bin/aplay -q' % text, stdout=n, shell=True)
+            return Popen(
+                '/usr/bin/espeak -a %(amplitude)d -s %(speed)d -v %(voice)s %(opts)s --stdout "%(text)s" | '
+                '/usr/bin/aplay -q' %
+                {
+                    'text': text,
+                    'speed': speed,
+                    'amplitude': amplitude,
+                    'voice': voice,
+                    'opts': espeak_options
+                },
+                stdout=n, shell=True)

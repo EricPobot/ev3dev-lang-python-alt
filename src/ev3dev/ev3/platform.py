@@ -39,11 +39,10 @@ INPUT_4 = 'in4'
 
 
 class Leds(object):
-    """
-    The EV3 LEDs.
-    """
+    """ The EV3 LEDs.
 
-# ~autogen led-colors platforms.ev3.led>currentClass
+    The EV3 brick has two bi-color LEDs which can be addressed individually.
+    """
 
     red_left = Led(name='ev3-left0:red:ev3dev')
     red_right = Led(name='ev3-right0:red:ev3dev')
@@ -105,30 +104,29 @@ class Leds(object):
         Leds.green_right.brightness = 0
 
 
-# ~autogen
-
 class Button(ButtonEVIO):
-    """
-    EV3 Buttons
-    """
+    """ EV3 Buttons.
 
-# ~autogen button-property platforms.ev3.button>currentClass
+    The EV3 brick has 6 buttons.
+    """
 
     @staticmethod
     def on_up(state):
-        """
-        This handler is called by `process()` whenever state of 'up' button
-        has changed since last `process()` call. `state` parameter is the new
-        state of the button.
+        """ This handler is called by `process()` whenever state of 'up' button
+        has changed since last `process()` call.
+
+        Args:
+            state (str): the new state of the button.
         """
         pass
 
     @staticmethod
     def on_down(state):
-        """
-        This handler is called by `process()` whenever state of 'down' button
-        has changed since last `process()` call. `state` parameter is the new
-        state of the button.
+        """ This handler is called by `process()` whenever state of 'down' button
+        has changed since last `process()` call.
+
+        Args:
+            state (str): the new state of the button.
         """
         pass
 
@@ -136,8 +134,10 @@ class Button(ButtonEVIO):
     def on_left(state):
         """
         This handler is called by `process()` whenever state of 'left' button
-        has changed since last `process()` call. `state` parameter is the new
-        state of the button.
+        has changed since last `process()` call.
+
+        Args:
+            state (str): the new state of the button.
         """
         pass
 
@@ -145,8 +145,10 @@ class Button(ButtonEVIO):
     def on_right(state):
         """
         This handler is called by `process()` whenever state of 'right' button
-        has changed since last `process()` call. `state` parameter is the new
-        state of the button.
+        has changed since last `process()` call.
+
+        Args:
+            state (str): the new state of the button.
         """
         pass
 
@@ -154,8 +156,10 @@ class Button(ButtonEVIO):
     def on_enter(state):
         """
         This handler is called by `process()` whenever state of 'enter' button
-        has changed since last `process()` call. `state` parameter is the new
-        state of the button.
+        has changed since last `process()` call.
+
+        Args:
+            state (str): the new state of the button.
         """
         pass
 
@@ -163,62 +167,66 @@ class Button(ButtonEVIO):
     def on_backspace(state):
         """
         This handler is called by `process()` whenever state of 'backspace' button
-        has changed since last `process()` call. `state` parameter is the new
-        state of the button.
+        has changed since last `process()` call.
+
+        Args:
+            state (str): the new state of the button.
         """
         pass
 
-
     _buttons = {
-            'up': {'name': '/dev/input/by-path/platform-gpio-keys.0-event', 'value': 103},
-            'down': {'name': '/dev/input/by-path/platform-gpio-keys.0-event', 'value': 108},
-            'left': {'name': '/dev/input/by-path/platform-gpio-keys.0-event', 'value': 105},
-            'right': {'name': '/dev/input/by-path/platform-gpio-keys.0-event', 'value': 106},
-            'enter': {'name': '/dev/input/by-path/platform-gpio-keys.0-event', 'value': 28},
-            'backspace': {'name': '/dev/input/by-path/platform-gpio-keys.0-event', 'value': 14},
-        }
+        'up': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 103),
+        'down': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 108),
+        'left': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 105),
+        'right': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 106),
+        'enter': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 28),
+        'back': ButtonDefinition('/dev/input/by-path/platform-gpio-keys.0-event', 14),
+    }
 
     @property
     def up(self):
-        """
-        Check if 'up' button is pressed.
+        """ UP button status
+
+        :type: bool
         """
         return 'up' in self.buttons_pressed
 
     @property
     def down(self):
-        """
-        Check if 'down' button is pressed.
+        """ DOWN button status
+
+        :type: bool
         """
         return 'down' in self.buttons_pressed
 
     @property
     def left(self):
-        """
-        Check if 'left' button is pressed.
+        """ LEFT button status
+
+        :type: bool
         """
         return 'left' in self.buttons_pressed
 
     @property
     def right(self):
-        """
-        Check if 'right' button is pressed.
+        """ RIGHT button status
+
+        :type: bool
         """
         return 'right' in self.buttons_pressed
 
     @property
     def enter(self):
-        """
-        Check if 'enter' button is pressed.
+        """ ENTER button status
+
+        :type: bool
         """
         return 'enter' in self.buttons_pressed
 
     @property
-    def backspace(self):
-        """
-        Check if 'backspace' button is pressed.
-        """
-        return 'backspace' in self.buttons_pressed
+    def back(self):
+        """ BACK button status
 
-
-# ~autogen
+        :type: bool
+        """
+        return 'back' in self.buttons_pressed
