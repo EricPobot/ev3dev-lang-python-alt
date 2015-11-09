@@ -28,7 +28,9 @@ from textwrap import wrap
 
 from ev3dev import ev3
 
-print(wrap("Runs motors connected to outputs B and C in sync", 20))
+for line in wrap("Runs motors connected to outputs B and C in sync", 20):
+    print(line)
+print
 
 motors = [ev3.LargeMotor(p) for p in ('outB', 'outC')]
 
@@ -48,6 +50,7 @@ print('+ waiting for end...')
 while m.state and 'holding' not in m.state:
     time.sleep(0.1)
 print('+ complete.')
+print
 
 time.sleep(0.5)
 
@@ -59,6 +62,7 @@ print('+ waiting for end...')
 while m.state and 'holding' not in m.state:
     time.sleep(0.1)
 print('+ complete.')
+print
 
 time.sleep(0.5)
 for m in motors:
