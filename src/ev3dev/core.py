@@ -187,7 +187,6 @@ class Device(object):
 
         When connected successfully, the `connected` attribute is set to True.
         """
-
         classpath = os.path.join(Device.DEVICE_ROOT_PATH, class_name)
 
         for file_name in os.listdir(classpath):
@@ -364,11 +363,7 @@ class Led(Device):
     def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
         if port is not None:
             kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
-
-
-# ~autogen
-# ~autogen generic-get-set classes.led>currentClass
+        super(Led, self).__init__(self.SYSTEM_CLASS_NAME, name, **kwargs)
 
     @property
     def max_brightness(self):
@@ -413,7 +408,7 @@ class Led(Device):
         trigger. However, if you set the brightness value to 0 it will
         also disable the `timer` trigger.
         """
-        return self.get_attr_from_set('trigger')
+        return self.get_attr_string('trigger')
 
     @trigger.setter
     def trigger(self, value):
@@ -444,9 +439,6 @@ class Led(Device):
     @delay_off.setter
     def delay_off(self, value):
         self.set_attr_int('delay_off', value)
-
-
-# ~autogen
 
     @property
     def brightness_pct(self):
