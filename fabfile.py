@@ -30,6 +30,11 @@ from fabric.api import env, put, sudo, run, local, task, prefix, lcd
 
 from git_version import git_version
 
+try:
+    import fabconfig
+except ImportError:
+    pass
+
 # change the hostname of the EV3 if needed
 env.hosts = ['ev3dev']
 
