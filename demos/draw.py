@@ -23,65 +23,31 @@
 # THE SOFTWARE.
 # -----------------------------------------------------------------------------
 
-""" Runs motors connected to ports B and C, displaying some info on the LCD
-at the same time.
+""" Draw some stuff on the LCD.
 """
 
 import time
-from textwrap import wrap
 
-from ev3dev import ev3
+from ev3dev.display import Screen
 
-for line in wrap("Runs motors connected to outputs B and C in sync", 20):
-    print(line)
-print
+screen = Screen()
+w, h = (v-1 for v in screen.shape)
 
-motors = [ev3.LargeMotor(p) for p in ('outB', 'outC')]
+screen.hide_cursor()
 
-# configure the motors
-for m in motors:
-    m.reset()
+screen.draw.rectangle(
+    ((0, 0), (w, h)),
+    outline='black'
+)
+screen.draw.arc(
+    ((w * 0.25, h * 0.25), (w * 0.75, h * 0.75)),
+    0, 360
+)
 
-    m.duty_cycle_sp = 100
-    m.stop_command = ev3.LargeMotor.STOP_COMMAND_BRAKE
-    m.ramp_up_sp = 500
-    m.ramp_down_sp = 500
+s = "That's all folks."
+tw, th = screen.draw.textsize(s)
+screen.draw.text((w - tw, h - th), s)
 
-# display current positions
-p_b, p_c = [m.position for m in motors]
-print('pos: B=%d C=%d' % (p_b, p_c))
+screen.update()
 
-print("2 turns forward :")
-for m in motors:
-    m.run_to_rel_pos(position_sp=360 * 2)
-
-print('+ waiting for end...')
-while m.state and 'holding' not in m.state:
-    time.sleep(0.1)
-print('+ complete.')
-p_b, p_c = [m.position for m in motors]
-print('pos: B=%d C=%d' % (p_b, p_c))
-
-print
-
-time.sleep(0.5)
-
-print('backwards now :')
-for m in motors:
-    m.run_to_rel_pos(position_sp=-360 * 2)
-
-print('+ waiting for end...')
-while m.state and 'holding' not in m.state:
-    time.sleep(0.1)
-print('+ complete.')
-p_b, p_c = [m.position for m in motors]
-print('pos: B=%d C=%d' % (p_b, p_c))
-
-print
-
-time.sleep(0.5)
-for m in motors:
-    m.reset()
-
-print("That's all folks.")
 time.sleep(5)
