@@ -34,7 +34,7 @@ class BaseMotor(Device):
 
         if port:
             kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
+        super(BaseMotor, self).__init__(self.SYSTEM_CLASS_NAME, name, **kwargs)
 
     @property
     def polarity(self):
@@ -113,7 +113,7 @@ class DcMotor(BaseMotor):
     SYSTEM_DEVICE_NAME_CONVENTION = 'motor*'
 
     def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
+        super(DcMotor, self).__init__(port=port, name=name, **kwargs)
         if 'duty_cycle_sp' not in kwargs:
             self.duty_cycle_sp = 75
 
