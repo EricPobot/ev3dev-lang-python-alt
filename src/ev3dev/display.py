@@ -225,3 +225,15 @@ class Screen(FbMem):
             self.mmap[:] = self._img_to_rgb565_bytes()
         else:
             raise Exception("Not supported")
+
+    @staticmethod
+    def hide_cursor():
+        """ Hides the text cursor.
+        """
+        print("\033[?25l")
+
+    @staticmethod
+    def show_cursor():
+        """ Shown the text cursor.
+        """
+        print("\033[?25h")
