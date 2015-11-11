@@ -299,6 +299,7 @@ texinfo_documents = [
 
 # Custom settings
 autoclass_content = 'both'
+autodoc_member_order = 'bysource'
 
 # Napoleon settings
 napoleon_google_docstring = True
