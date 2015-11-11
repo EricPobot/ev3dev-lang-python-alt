@@ -38,8 +38,8 @@ Generic sensors
     :members:
     :show-inheritance:
 
-Sensors
-^^^^^^^
+Concrete sensors
+^^^^^^^^^^^^^^^^
 
 .. autoclass:: TouchSensor
     :members:
