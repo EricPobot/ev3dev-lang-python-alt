@@ -30,8 +30,10 @@ import fnmatch
 import os
 import os.path
 import re
-from subprocess import Popen
+import subprocess
 from collections import namedtuple
+import threading
+import time
 
 INPUT_AUTO = ''
 OUTPUT_AUTO = ''
@@ -360,6 +362,10 @@ class Led(Device):
     SYSTEM_CLASS_NAME = 'leds'
     SYSTEM_DEVICE_NAME_CONVENTION = '*'
 
+    TRIGGER_ON = 'default-on'
+    TRIGGER_TIMER = 'timer'
+    TRIGGER_HEARTBEAT = 'heartbeat'
+
     def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
         if port is not None:
             kwargs['port_name'] = port
@@ -367,15 +373,19 @@ class Led(Device):
 
     @property
     def max_brightness(self):
-        """
-        Returns the maximum allowable brightness value.
+        """ The maximum allowable brightness value.
+
+        :type: int
         """
         return self.get_attr_int('max_brightness')
 
     @property
     def brightness(self):
-        """
-        Sets the brightness level. Possible values are from 0 to `max_brightness`.
+        """ The brightness level.
+
+        Possible values are from 0 to `max_brightness`.
+
+        :type: int
         """
         return self.get_attr_int('brightness')
 
@@ -385,16 +395,17 @@ class Led(Device):
 
     @property
     def triggers(self):
-        """
-        Returns a list of available triggers.
+        """ The list of available triggers.
+
+        :type: list[str]
         """
         return self.get_attr_set('trigger')
 
     @property
     def trigger(self):
-        """
-        Sets the led trigger. A trigger
-        is a kernel based source of led events. Triggers can either be simple or
+        """ LED trigger.
+
+        A trigger is a kernel based source of led events. Triggers can either be simple or
         complex. A simple trigger isn't configurable and is designed to slot into
         existing subsystems with minimal additional code. Examples are the `ide-disk` and
         `nand-disk` triggers.
@@ -407,6 +418,8 @@ class Led(Device):
         You can change the brightness value of a LED independently of the timer
         trigger. However, if you set the brightness value to 0 it will
         also disable the `timer` trigger.
+
+        :type: str
         """
         return self.get_attr_string('trigger')
 
@@ -416,10 +429,11 @@ class Led(Device):
 
     @property
     def delay_on(self):
-        """
-        The `timer` trigger will periodically change the LED brightness between
+        """ The `timer` trigger will periodically change the LED brightness between
         0 and the current brightness setting. The `on` time can
         be specified via `delay_on` attribute in milliseconds.
+
+        :type: int
         """
         return self.get_attr_int('delay_on')
 
@@ -429,10 +443,11 @@ class Led(Device):
 
     @property
     def delay_off(self):
-        """
-        The `timer` trigger will periodically change the LED brightness between
+        """ The `timer` trigger will periodically change the LED brightness between
         0 and the current brightness setting. The `off` time can
         be specified via `delay_off` attribute in milliseconds.
+
+        :type: int
         """
         return self.get_attr_int('delay_off')
 
@@ -442,8 +457,9 @@ class Led(Device):
 
     @property
     def brightness_pct(self):
-        """
-        Returns led brightness as a fraction of max_brightness
+        """ LED brightness in fraction of max_brightness (from 0.0 to -1.0).
+
+        :type: float
         """
         return float(self.brightness) / self.max_brightness
 
@@ -461,8 +477,15 @@ class ButtonManagerBase(object):
     buttons available on the target.
 
     It is used for brick buttons, but also for remote command ones.
+
+    To relieve the application from taking care of the buttons periodic
+    polling, a threaded scanner is available, which will take care of this
+    and process the state changes. See :py:meth:`start_scanner`,
+    :py:meth:`stop_scanner`  and :py:meth:`_scan_buttons` methods for details.
     """
     _state = set()
+    _scanner = None
+    _stop_scan = False
 
     @property
     def buttons_pressed(self):
@@ -537,6 +560,58 @@ class ButtonManagerBase(object):
 
         if state_diff and self.on_change:
             self.on_change([(button, button in new_state) for button in state_diff])
+
+    def start_scanner(self):
+        """ Starts the automatic buttons scanner if not yet active.
+
+        The polling loop runs in a separate thread.
+
+        Calling this method while the scanner is running does nothing.
+
+        Returns:
+            bool: True is the scanner has been started, False if it was already running
+        """
+        if not self._scanner:
+            self._scanner = threading.Thread(target=self._scan_buttons)
+            self._scanner.start()
+            return True
+        else:
+            return False
+
+    def stop_scanner(self):
+        """ Stops the automatic buttons scanner if active.
+
+        Calling this method while the scanner is not running does nothing.
+
+        Returns:
+            bool: True is the scanner has been stopped, False if it was not running
+        """
+        if self._scanner:
+            self._stop_scan = True
+            self._scanner.join(10)
+            self._scanner = None
+            return True
+        else:
+            return False
+
+    def _scan_buttons(self):
+        """ The threading buttons polling loop.
+
+        It takes care of processing the buttons every 0.1s until the stop flag
+        has been set by a :py:meth:`stop_scan` call.
+
+        .. Important::
+
+            The callbacks attached to the various state change events will be executed
+            in the context of the **scanner thread**, and not the main one. This must be taken in
+            account if using resources which are also manipulated in the main thread (or other
+            ones), protecting the accesses with the appropriate synchronisation mechanisms
+            (semaphore, locks,...)
+        """
+        self._stop_scan = False
+        while not self._stop_scan:
+            self.process()
+            time.sleep(0.1)
 
 
 class ButtonManagerEVIO(ButtonManagerBase):
@@ -788,7 +863,7 @@ class Sound:
         .. _`beep man page`: http://manpages.debian.org/cgi-bin/man.cgi?query=beep
         """
         with open(os.devnull, 'w') as n:
-            return Popen('/usr/bin/beep %s' % args, stdout=n, shell=True)
+            return subprocess.call('/usr/bin/beep %s' % args, stdout=n, shell=True)
 
     @staticmethod
     def tone(*args):
@@ -853,17 +928,18 @@ class Sound:
             raise Exception("Unsupported number of parameters in Sound.tone()")
 
     @staticmethod
-    def play(wav_file):
+    def play(wav_file, wait=True):
         """ Plays a WAV file.
 
         Args:
             wav_file (str): the path of the WAV file
+             wait (bool): if True (default), wait for the play is complete
         """
-        with open(os.devnull, 'w') as n:
-            return Popen('/usr/bin/aplay -q "%s"' % wav_file, stdout=n, shell=True)
+        meth = subprocess.call if wait else subprocess.Popen
+        return meth('/usr/bin/aplay "%s" > /dev/null 2>&1' % wav_file, shell=True)
 
     @staticmethod
-    def speak(text, amplitude=200, speed=175, voice='en', espeak_options=''):
+    def speak(text, amplitude=200, speed=150, voice='en', espeak_options='', wait=True):
         """ Speaks the given text aloud.
 
         Args:
@@ -872,16 +948,17 @@ class Sound:
             speed (int): speech speed, in words per minute. Default to 175
             voice (str): the voice code (see content of `espeak-data/voices` for the list). Default to `en`
             espeak_options (str): additional espeak options, as described in documentation
+            wait (bool): if True (default), wait for the speech is complete
         """
-        with open(os.devnull, 'w') as n:
-            return Popen(
-                '/usr/bin/espeak -a %(amplitude)d -s %(speed)d -v %(voice)s %(opts)s --stdout "%(text)s" | '
-                '/usr/bin/aplay -q' %
-                {
-                    'text': text,
-                    'speed': speed,
-                    'amplitude': amplitude,
-                    'voice': voice,
-                    'opts': espeak_options
-                },
-                stdout=n, shell=True)
+        meth = subprocess.call if wait else subprocess.Popen
+        return meth(
+            '/usr/bin/espeak -a %(amplitude)d -s %(speed)d -v %(voice)s %(opts)s --stdout "%(text)s" | '
+            '/usr/bin/aplay > /dev/null 2>&1' %
+            {
+                'text': text,
+                'speed': speed,
+                'amplitude': amplitude,
+                'voice': voice,
+                'opts': espeak_options
+            },
+            shell=True)
