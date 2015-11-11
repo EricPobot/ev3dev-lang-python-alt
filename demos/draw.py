@@ -27,27 +27,37 @@
 """
 
 import time
+import os
 
-from ev3dev.display import Screen
+from ev3dev.display import Screen, Image
 
 screen = Screen()
-w, h = (v-1 for v in screen.shape)
-
 screen.hide_cursor()
 
-screen.draw.rectangle(
-    ((0, 0), (w, h)),
-    outline='black'
-)
-screen.draw.arc(
-    ((w * 0.25, h * 0.25), (w * 0.75, h * 0.75)),
-    0, 360
-)
+w, h = screen.shape
 
-s = "That's all folks."
-tw, th = screen.draw.textsize(s)
-screen.draw.text((w - tw, h - th), s)
+for image_file in ('tux.png', 'pobot.png'):
+    decal = Image.open(os.path.join(os.path.dirname(__file__), 'img', image_file))
+    iw, ih = decal.size
 
-screen.update()
+    screen.draw.rectangle(
+        ((0, 0), (w-1, h-1)),
+        outline='black'
+    )
 
-time.sleep(5)
+    for i, dim in enumerate(zip('wh', (w, h))):
+        label, value = dim
+        s = "%s=%d" % (label, value)
+        tw, th = screen.draw.textsize(s)
+        screen.draw.text((w - tw - 1, 2 + i * th), s)
+
+    screen.draw.arc((5, 5, 25, 25), 0, 360)
+    screen.draw.arc((w - 25, h - 25, w - 5, h - 5), 0, 360)
+
+    screen.img.paste(decal, ((w - iw)/2, (h - ih)/2, (w + iw)/2, (h + ih)/2), decal)
+
+    screen.update()
+
+    time.sleep(5)
+
+    screen.clear()
