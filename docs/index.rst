@@ -36,6 +36,19 @@ based on their individual features and characteristics.
    mod-ev3
    mod-brickpi
 
+Demos
+-----
+
+Some demos illustrating use cases of the library and complete applications.
+
+They are gathered in the `demos` sub-folder of the project.
+
+.. toctree::
+   :maxdepth: 1
+
+   demo-basic
+   demo-complex
+
 Indices and tables
 ==================
 
