@@ -42,75 +42,173 @@ class Leds(object):
     """ The EV3 LEDs.
 
     The EV3 brick has two bi-color LEDs which can be addressed individually.
+
+    This class is not supposed to be instantiated since there is a single set of
+    LEDs on the brick. All its attributes and methods are defined either as
+    static or class level.
     """
 
+    #: The red LED on the left side of the brick
     red_left = Led(name='ev3-left0:red:ev3dev')
+    #: The red LED on the right side of the brick
     red_right = Led(name='ev3-right0:red:ev3dev')
+    #: The green LED on the left side of the brick
     green_left = Led(name='ev3-left1:green:ev3dev')
+    #: The green LED on the right side of the brick
     green_right = Led(name='ev3-right1:green:ev3dev')
 
-    @staticmethod
-    def mix_colors(red, green):
-        Leds.red_left.brightness_pct = red
-        Leds.red_right.brightness_pct = red
-        Leds.green_left.brightness_pct = green
-        Leds.green_right.brightness_pct = green
+    #: The group containing the red LEDs
+    red_leds = (red_left, red_right)
+    #: The group containing the green LEDs
+    green_leds = (green_left, green_right)
+    #: The group containing the left side LEDs
+    left_leds = (red_left, green_left)
+    #: The group containing the right side LEDs
+    right_leds = (red_right, green_right)
+    #: The group containing all the LEDs
+    all = red_leds + green_leds
+
+    @classmethod
+    def mix_colors(cls, red, green):
+        """ Set the color of all LEDs from the red/green percents, as defined
+        by :py:meth:`ev3dev.core.Led.brightness_pct`.
+
+        Args:
+            red (float): red level
+            green (float): green level
+        """
+        for l in cls.red_leds:
+            l.brightness_pct = red
+        for l in cls.green_leds:
+            l.brightness_pct = green
 
     @staticmethod
     def set_red(pct):
+        """ Lights the LEDs in a shade of red.
+
+        Args:
+            pct (float): brightness percent
+        """
         Leds.mix_colors(red=1 * pct, green=0 * pct)
 
     @staticmethod
     def red_on():
+        """ Turns the LEDs in full red.
+        """
         Leds.set_red(1)
 
     @staticmethod
     def set_green(pct):
+        """ Lights the LEDs in a shade of green.
+
+        Args:
+            pct (float): brightness percent
+        """
         Leds.mix_colors(red=0 * pct, green=1 * pct)
 
     @staticmethod
     def green_on():
+        """ Turns the LEDs in full green.
+        """
         Leds.set_green(1)
 
     @staticmethod
     def set_amber(pct):
+        """ Lights the LEDs in a shade of amber (equal mix of red and green).
+
+        Args:
+            pct (float): brightness percent
+        """
         Leds.mix_colors(red=1 * pct, green=1 * pct)
 
     @staticmethod
     def amber_on():
+        """ Turns the LEDs in full amber.
+        """
         Leds.set_amber(1)
 
     @staticmethod
     def set_orange(pct):
+        """ Lights the LEDs in a shade of orange (red-ish mix of red and green).
+
+        Args:
+            pct (float): brightness percent
+        """
         Leds.mix_colors(red=1 * pct, green=0.5 * pct)
 
     @staticmethod
     def orange_on():
+        """ Turns the LEDs in full orange.
+        """
         Leds.set_orange(1)
 
     @staticmethod
     def set_yellow(pct):
+        """ Lights the LEDs in a shade of orange (green-ish mix of red and green).
+
+        Args:
+            pct (float): brightness percent
+        """
         Leds.mix_colors(red=0.5 * pct, green=1 * pct)
 
     @staticmethod
     def yellow_on():
+        """ Turns the LEDs in full yellow.
+        """
         Leds.set_yellow(1)
 
-    @staticmethod
-    def all_off():
-        Leds.red_left.brightness = 0
-        Leds.red_right.brightness = 0
-        Leds.green_left.brightness = 0
-        Leds.green_right.brightness = 0
+    @classmethod
+    def all_off(cls):
+        """ Turns all LEDs off.
+        """
+        for l in cls.all:
+            l.trigger = Led.TRIGGER_ON
+            l.brightness = 0
+
+    @classmethod
+    def blink(cls, leds=all, on=500, off=500):
+        cls.all_off()
+        for l in leds:
+            l.trigger = 'timer'
+            # TODO make this work
+            # l.delay_on = on
+            # l.delay_off = off
+
+    @classmethod
+    def steady(cls):
+        for l in cls.all:
+            l.trigger = Led.TRIGGER_ON
+
+    @classmethod
+    def heartbeat(cls, red, green):
+        cls.steady()
+        for l in cls.all:
+            l.trigger = Led.TRIGGER_HEARTBEAT
+        cls.mix_colors(red, green)
 
 
 class Buttons(ButtonManagerEVIO):
     """ EV3 Buttons.
 
-    This class defines the 6 EV3 buttons. Their default handlers are implemented as
-    empty methods.
+    This class defines the 6 EV3 buttons, with a class level property for each one,
+    giving its current state.
 
-    It adds a property for each button returning its current state.
+    It also provides slots for attaching event handlers to be invoked on state changes.
+    There are two levels of handler:
+
+        - global : called as soon as a change is detected, passing it the list of changes
+        - per button : called when a change is detected for this button
+
+    By default, handlers are no-op. To use them, you must attach your handlers by overriding
+    the default ones.
+
+    Examples:
+
+        >>> def my_up_handler(state):
+        >>>     ...
+        >>>
+        >>> btns = ev3dev.ev3.Buttons()
+        >>> btns.on_up = my_up_handler
     """
 
     #: Identifier of the "BACK" button
@@ -125,7 +223,6 @@ class Buttons(ButtonManagerEVIO):
     RIGHT = 'right'
     #: Identifier of the "ENTER" button
     ENTER = 'enter'
-
 
     @staticmethod
     def on_up(state):
