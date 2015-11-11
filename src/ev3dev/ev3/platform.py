@@ -58,15 +58,31 @@ class Leds(object):
     green_right = Led(name='ev3-right1:green:ev3dev')
 
     #: The group containing the red LEDs
-    red_leds = (red_left, red_right)
+    RED = (red_left, red_right)
     #: The group containing the green LEDs
-    green_leds = (green_left, green_right)
+    GREEN = (green_left, green_right)
     #: The group containing the left side LEDs
-    left_leds = (red_left, green_left)
+    LEFT = (red_left, green_left)
     #: The group containing the right side LEDs
-    right_leds = (red_right, green_right)
+    RIGHT = (red_right, green_right)
     #: The group containing all the LEDs
-    all = red_leds + green_leds
+    ALL = RED + GREEN
+
+    @staticmethod
+    def set_attributes(group, **kwargs):
+        """ Sets attributes for each LED in a group.
+
+        Args:
+            group (tuple): a tuple containing the LEDs to be set (ex: :py:setattr:`RED`)
+            \**kwargs: the attributes and their values
+
+        Example::
+
+            >>> Leds.set(LEFT, brightness_pct=0.5, trigger='timer')
+        """
+        for led in group:
+            for k in kwargs:
+                setattr(led, k, kwargs[k])
 
     @classmethod
     def mix_colors(cls, red, green):
@@ -77,9 +93,9 @@ class Leds(object):
             red (float): red level
             green (float): green level
         """
-        for l in cls.red_leds:
+        for l in cls.RED:
             l.brightness_pct = red
-        for l in cls.green_leds:
+        for l in cls.GREEN:
             l.brightness_pct = green
 
     @staticmethod
@@ -161,12 +177,12 @@ class Leds(object):
     def all_off(cls):
         """ Turns all LEDs off.
         """
-        for l in cls.all:
+        for l in cls.ALL:
             l.trigger = Led.TRIGGER_ON
             l.brightness = 0
 
     @classmethod
-    def blink(cls, leds=all, on=500, off=500):
+    def blink(cls, leds=ALL, on=500, off=500):
         cls.all_off()
         for l in leds:
             l.trigger = 'timer'
@@ -176,13 +192,13 @@ class Leds(object):
 
     @classmethod
     def steady(cls):
-        for l in cls.all:
+        for l in cls.ALL:
             l.trigger = Led.TRIGGER_ON
 
     @classmethod
     def heartbeat(cls, red, green):
         cls.steady()
-        for l in cls.all:
+        for l in cls.ALL:
             l.trigger = Led.TRIGGER_HEARTBEAT
         cls.mix_colors(red, green)
 

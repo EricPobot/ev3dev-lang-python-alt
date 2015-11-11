@@ -322,7 +322,7 @@ class LedFeedback(object):
         except KeyError:
             mix = (1, 1)
 
-        for l in ev3.Leds.all:
+        for l in ev3.Leds.ALL:
             l.trigger = ev3.Led.TRIGGER_HEARTBEAT
         ev3.Leds.mix_colors(*mix)
 
@@ -332,11 +332,11 @@ class LedFeedback(object):
 
         def start_k2000():
             ev3.Leds.mix_colors(red, green)
-            for group in (ev3.Leds.left_leds, ev3.Leds.right_leds):
+            for group in (ev3.Leds.LEFT, ev3.Leds.RIGHT):
                 for l in group:
-                    if red and l in ev3.Leds.red_leds:
+                    if red and l in ev3.Leds.RED:
                         l.trigger = ev3.Led.TRIGGER_TIMER
-                    if green and l in ev3.Leds.green_leds:
+                    if green and l in ev3.Leds.GREEN:
                         l.trigger = ev3.Led.TRIGGER_TIMER
 
                 time.sleep(period)
