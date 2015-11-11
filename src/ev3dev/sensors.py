@@ -202,13 +202,27 @@ class ColorSensor(Sensor):
     SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
     SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
 
+    #: Color code returned if nothing in front of the sensor
+    COLOR_NONE = 0
+    #: Color code returned for black
+    COLOR_BLACK = 1
+    #: Color code returned for blue
+    COLOR_BLUE = 2
+    #: Color code returned for green
+    COLOR_GREEN = 3
+    #: Color code returned for yellow
+    COLOR_YELLOW = 4
+    #: Color code returned for red
+    COLOR_RED = 5
+    #: Color code returned for white
+    COLOR_WHITE = 6
+    #: Color code returned for brown
+    COLOR_BROWN = 7
+
     def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
         if port is not None:
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-color'], **kwargs)
-
-    #: Reflected light. Red LED on.
-    MODE_COL_REFLECT = 'COL-REFLECT'
 
     #: Ambient light. Red LEDs off.
     MODE_COL_AMBIENT = 'COL-AMBIENT'
@@ -221,6 +235,9 @@ class ColorSensor(Sensor):
 
     #: Raw Color Components. All LEDs rapidly cycling, appears white.
     MODE_RGB_RAW = 'RGB-RAW'
+
+    #: Reflected light. Red LED on.
+    MODE_COL_REFLECT = 'COL-REFLECT'
 
 
 class UltrasonicSensor(Sensor):
@@ -360,6 +377,15 @@ class TouchSensor(Sensor):
         if port is not None:
             kwargs['port_name'] = port
         Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-touch', 'lego-nxt-touch'], **kwargs)
+
+    @property
+    def is_pressed(self):
+        """ Tells is the sensor is currently pressed or not.
+
+        Returns:
+            bool: pressed state
+        """
+        return bool(self.value())
 
 
 class RemoteControl(ButtonManagerBase):
