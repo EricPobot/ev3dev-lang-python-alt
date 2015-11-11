@@ -53,6 +53,11 @@ pkg_meta = {
         'arch_ext': '.tar.gz',
         'build_cmd': 'sdist',
         'install_cmd': 'pip install %s -U'
+    },
+    'wheel': {
+        'arch_ext': '-py2-none-any.whl',
+        'build_cmd': 'bdist_wheel',
+        'install_cmd': 'pip install %s -U'
     }
 }
 
@@ -81,7 +86,7 @@ def _archive_name():
     extracted from the setup() call
     """
     infos = _get_pkg_infos()
-    if env.pkg_format == 'egg':
+    if env.pkg_format in ('egg', 'wheel'):
         infos["name"] = infos["name"].replace('-', '_')
     infos["arch_ext"] = pkg_meta[env.pkg_format]['arch_ext']
 
