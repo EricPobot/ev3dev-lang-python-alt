@@ -73,7 +73,7 @@ class Leds(object):
         """ Sets attributes for each LED in a group.
 
         Args:
-            group (tuple): a tuple containing the LEDs to be set (ex: :py:setattr:`RED`)
+            group (tuple): a tuple containing the LEDs to be set (ex: :py:attr:`RED`)
             \**kwargs: the attributes and their values
 
         Example::
