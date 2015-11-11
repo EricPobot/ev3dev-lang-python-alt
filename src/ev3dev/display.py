@@ -199,6 +199,16 @@ class Screen(FbMem):
         """
         return self._draw
 
+    @property
+    def img(self):
+        """ The handle to the PIL.Image class associated with the screen.
+
+        Example:
+
+            >>> screen.img.paste(tux, (10,10,60,20))
+        """
+        return self._img
+
     def clear(self):
         """ Clears the screen
         """
