@@ -30,11 +30,6 @@ from fabric.api import env, put, sudo, run, local, task, prefix, lcd
 
 from git_version import git_version
 
-try:
-    import fabconfig
-except ImportError:
-    pass
-
 # change the hostname of the EV3 if needed
 env.hosts = ['ev3dev']
 
@@ -42,6 +37,11 @@ env.use_ssh_config = True
 
 # default distribution package format
 env.pkg_format = 'egg'
+
+try:
+    import fabconfig
+except ImportError:
+    pass
 
 pkg_meta = {
     'egg': {
