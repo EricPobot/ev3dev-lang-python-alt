@@ -52,14 +52,14 @@ class Grabber(object):
     DEPOSIT_DIST = 250          # mm
 
     def __init__(self):
-        self._motor_left = ev3.LargeMotor('outB')
-        self._motor_right = ev3.LargeMotor('outC')
+        self._motor_left = ev3.LargeMotor(port='outB')
+        self._motor_right = ev3.LargeMotor(port='outC')
         self._motors = (self._motor_left, self._motor_right)
 
-        self._gripper = Gripper(ev3.MediumMotor('outA'))
+        self._gripper = Gripper(ev3.MediumMotor(port='outA'))
 
-        self._color_sensor = ev3.ColorSensor('in1')
-        self._start_btn = ev3.TouchSensor('in2')
+        self._color_sensor = ev3.ColorSensor(port='in1')
+        self._start_btn = ev3.TouchSensor(port='in2')
 
         self._buttons = ev3.Buttons()
         self._buttons.on_back = self._back_button_pressed

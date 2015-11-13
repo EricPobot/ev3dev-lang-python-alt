@@ -36,7 +36,7 @@ for line in wrap("Runs motors connected to outputs B and C in sync", 20):
     print(line)
 print
 
-motors = [ev3.LargeMotor(p) for p in ('outB', 'outC')]
+motors = [ev3.LargeMotor(port=p) for p in ('outB', 'outC')]
 
 # configure the motors
 for m in motors:
