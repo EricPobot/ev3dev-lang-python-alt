@@ -32,6 +32,7 @@ from git_version import git_version
 
 # change the hostname of the EV3 if needed
 env.hosts = ['ev3dev']
+# env.user = 'robot'
 
 env.use_ssh_config = True
 
