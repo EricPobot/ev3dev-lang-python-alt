@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import os
 from struct import unpack
 
-from ev3dev.core import Device, ButtonManagerBase
+from ev3dev.core import PluggedDevice, ButtonManagerBase
 
 
-class Sensor(Device):
+class Sensor(PluggedDevice):
     """ The sensor class provides a uniform interface for using most of the
     sensors available for the EV3. The various underlying device drivers will
     create a `lego-sensor` device for interacting with the sensors.
@@ -26,6 +25,11 @@ class Sensor(Device):
     SYSTEM_CLASS_NAME = 'lego-sensor'
     SYSTEM_DEVICE_NAME_CONVENTION = 'sensor*'
 
+    #: The list of driver names associated to this type of sensor. Must
+    #: be defined by concrete sub-classes. Trying to instantiate a class not
+    #: defining this results in a :py:class:`NotImplementedError`
+    DRIVERS = None
+
     _bin_data_sizes = {
         "u8":     1,
         "s8":     1,
@@ -36,10 +40,11 @@ class Sensor(Device):
         "float":  4
     }
 
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
+    def __init__(self, **kwargs):
+        if not self.DRIVERS:
+            raise NotImplementedError()
+
+        super(Sensor, self).__init__(driver_name=self.DRIVERS, **kwargs)
 
         # will be initialized on first read on binary data
         self._bin_data_size = None
@@ -160,14 +165,7 @@ class Sensor(Device):
 class I2cSensor(Sensor):
     """ A generic interface to control I2C-type EV3 sensors.
     """
-
-    SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
-    SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['nxt-i2c-sensor'], **kwargs)
+    DRIVERS = ['nxt-i2c-sensor']
 
     @property
     def fw_version(self):
@@ -198,9 +196,7 @@ class I2cSensor(Sensor):
 class ColorSensor(Sensor):
     """ LEGO EV3 color sensor.
     """
-
-    SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
-    SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
+    DRIVERS = ['lego-ev3-color']
 
     #: Color code returned if nothing in front of the sensor
     COLOR_NONE = 0
@@ -218,11 +214,6 @@ class ColorSensor(Sensor):
     COLOR_WHITE = 6
     #: Color code returned for brown
     COLOR_BROWN = 7
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-color'], **kwargs)
 
     #: Ambient light. Red LEDs off.
     MODE_COL_AMBIENT = 'COL-AMBIENT'
@@ -243,14 +234,7 @@ class ColorSensor(Sensor):
 class UltrasonicSensor(Sensor):
     """ LEGO EV3 ultrasonic sensor.
     """
-
-    SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
-    SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-us', 'lego-nxt-us'], **kwargs)
+    DRIVERS = ['lego-ev3-us', 'lego-nxt-us']
 
     #: Continuous measurement in centimeters.
     #: LEDs: On, steady
@@ -275,14 +259,7 @@ class UltrasonicSensor(Sensor):
 class GyroSensor(Sensor):
     """ LEGO EV3 gyro sensor.
     """
-
-    SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
-    SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-gyro'], **kwargs)
+    DRIVERS = ['lego-ev3-gyro']
 
     #: Angle
     MODE_GYRO_ANG = 'GYRO-ANG'
@@ -303,14 +280,7 @@ class GyroSensor(Sensor):
 class InfraredSensor(Sensor):
     """ LEGO EV3 infrared sensor.
     """
-
-    SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
-    SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-ir'], **kwargs)
+    DRIVERS = ['lego-ev3-ir']
 
     #: Proximity
     MODE_IR_PROX = 'IR-PROX'
@@ -331,14 +301,7 @@ class InfraredSensor(Sensor):
 class SoundSensor(Sensor):
     """ LEGO NXT Sound Sensor
     """
-
-    SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
-    SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-nxt-sound'], **kwargs)
+    DRIVERS = ['lego-nxt-sound']
 
     #: Sound pressure level. Flat weighting
     MODE_DB = 'DB'
@@ -350,14 +313,7 @@ class SoundSensor(Sensor):
 class LightSensor(Sensor):
     """ LEGO NXT Light Sensor
     """
-
-    SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
-    SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-nxt-light'], **kwargs)
+    DRIVERS = ['lego-nxt-light']
 
     #: Reflected light. LED on
     MODE_REFLECT = 'REFLECT'
@@ -369,14 +325,7 @@ class LightSensor(Sensor):
 class TouchSensor(Sensor):
     """ Touch Sensor
     """
-
-    SYSTEM_CLASS_NAME = Sensor.SYSTEM_CLASS_NAME
-    SYSTEM_DEVICE_NAME_CONVENTION = Sensor.SYSTEM_DEVICE_NAME_CONVENTION
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, driver_name=['lego-ev3-touch', 'lego-nxt-touch'], **kwargs)
+    DRIVERS = ['lego-ev3-touch', 'lego-nxt-touch']
 
     @property
     def is_pressed(self):

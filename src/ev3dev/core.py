@@ -161,22 +161,32 @@ class DeviceFileCache(FileCache):
 
 class Device(object):
     """ The ev3dev device base class.
+
+    Device implementation concrete classes must define the :py:attr:`SYSTEM_CLASS_NAME` attribute
+    and can override :py:attr:`SYSTEM_DEVICE_NAME_CONVENTION` one for narrowing the pattern
+    matched by implemented device names, used when no specific device name is provided.
     """
 
-    DEVICE_ROOT_PATH = '/sys/class'
+    #: The system class of this device, i.e. the subdirectory of `/sys/class` in which instances
+    #: sub-tree is defined. Must be overridden by concrete sub-classes
+    SYSTEM_CLASS_NAME = None
+
+    #: The name or pattern used to identify instances of this device.
+    SYSTEM_DEVICE_NAME_CONVENTION = '*'
+
+    _DEVICE_ROOT_PATH = '/sys/class'
 
     _DEVICE_INDEX = re.compile(r'^.*(?P<idx>\d+)$')
 
-    def __init__(self, class_name, name='*', **kwargs):
-        """Spin through the Linux `sysfs` class for the device type and find
+    def __init__(self, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
+        """ Spin through the Linux `sysfs` class for the device type and find
         a device that matches the provided name and attributes (if any).
 
         Args:
-            class_name (str): class name of the device, a subdirectory of /sys/class.
-                For example, 'tacho-motor'.
-            name (str): pattern that device name should match.
-                For example, 'sensor*' or 'motor*'. Default value: '*'.
-            keyword arguments: used for matching the corresponding device
+            name (str): pattern that device name should match if different from
+                :py:attr:`SYSTEM_DEVICE_NAME_CONVENTION`.
+                For example, 'sensor*' or 'motor*'.
+            \**kwargs: keyword arguments used for matching the corresponding device
                 attributes. For example, port_name='outA', or
                 driver_name=['lego-ev3-us', 'lego-nxt-us']. When argument value
                 is a list, then a match against any entry of the list is
@@ -188,12 +198,20 @@ class Device(object):
             >>> s = Device('lego-sensor', driver_name=['lego-ev3-us', 'lego-nxt-us'])
 
         When connected successfully, the `connected` attribute is set to True.
-        """
-        classpath = os.path.join(Device.DEVICE_ROOT_PATH, class_name)
 
-        for file_name in os.listdir(classpath):
+        Raises:
+            NotImplementedError: if someone tris to instantiate us or any abstract descendant
+        """
+        if not self.SYSTEM_CLASS_NAME:
+            # concrete classes must define the above constant
+            # => if here we are trying to instantiate an abstract one
+            raise NotImplementedError()
+
+        sysclass_path = os.path.join(Device._DEVICE_ROOT_PATH, self.SYSTEM_CLASS_NAME)
+
+        for file_name in os.listdir(sysclass_path):
             if fnmatch.fnmatch(file_name, name):
-                self._path = os.path.join(classpath, file_name)
+                self._path = os.path.join(sysclass_path, file_name)
                 self._attribute_cache = DeviceFileCache(self._path)
 
                 # See if all the requested attributes exist for the candidate device
@@ -238,7 +256,7 @@ class Device(object):
         """ Internal device attribute setter """
         self._attribute_cache.write(attribute, value)
 
-    # TODO do we need get/set_attr_xxx methods in Python ?
+    # TODO do we really need these get/set_attr_xxx methods in Python ?
     def get_attr_int(self, attribute):
         """ Gets the value of an integer type attribute.
 
@@ -351,25 +369,35 @@ class Device(object):
         return self.get_attr_string('driver_name')
 
 
-class Led(Device):
+class PluggedDevice(Device):
+    """ Abstract model for any external device connected to the brick using one of its ports,
+    which can be identified by its name (e.g. `in1`, `outA`).
 
+    This class is used for factoring behaviors common to motors and sensors, and making explicit the
+    definition of a port for such devices. It is not intended to be directly instantiated.
     """
-    Any device controlled by the generic LED driver.
-    See https://www.kernel.org/doc/Documentation/leds/leds-class.txt
-    for more details.
+    def __init__(self, port=None, **kwargs):
+        """
+        Args:
+            port (str): optional port name
+            **kwargs: keyword arguments passed to the base class
+        """
+        if port is not None:
+            kwargs['port_name'] = port
+        super(PluggedDevice, self).__init__(**kwargs)
+
+
+class Led(Device):
+    """ Any device controlled by the generic LED driver.
+
+    See https://www.kernel.org/doc/Documentation/leds/leds-class.txt for more details.
     """
 
     SYSTEM_CLASS_NAME = 'leds'
-    SYSTEM_DEVICE_NAME_CONVENTION = '*'
 
     TRIGGER_ON = 'default-on'
     TRIGGER_TIMER = 'timer'
     TRIGGER_HEARTBEAT = 'heartbeat'
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        super(Led, self).__init__(self.SYSTEM_CLASS_NAME, name, **kwargs)
 
     @property
     def max_brightness(self):
@@ -668,12 +696,6 @@ class PowerSupply(Device):
     """
 
     SYSTEM_CLASS_NAME = 'power_supply'
-    SYSTEM_DEVICE_NAME_CONVENTION = '*'
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
 
     @property
     def measured_current(self):
@@ -740,7 +762,7 @@ class PowerSupply(Device):
         return self.measured_voltage / 1e6
 
 
-class LegoPort(Device):
+class LegoPort(PluggedDevice):
     """
     The `lego-port` class provides an interface for working with input and
     output ports that are compatible with LEGO MINDSTORMS RCX/NXT/EV3, LEGO
@@ -770,12 +792,6 @@ class LegoPort(Device):
     """
 
     SYSTEM_CLASS_NAME = 'lego_port'
-    SYSTEM_DEVICE_NAME_CONVENTION = '*'
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        if port is not None:
-            kwargs['port_name'] = port
-        Device.__init__(self, self.SYSTEM_CLASS_NAME, name, **kwargs)
 
     @property
     def modes(self):
@@ -833,7 +849,7 @@ class LegoPort(Device):
         return self.get_attr_string('status')
 
 
-class Sound:
+class Sound(object):
     """ Sound-related functions. The class has only static methods and is not
     intended for instantiation. It can beep, play wav files, or convert text to
     speech.

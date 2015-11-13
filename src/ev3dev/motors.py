@@ -1,40 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from ev3dev.core import Device
+from ev3dev.core import PluggedDevice
 
 
-class BaseMotor(Device):
+class BaseMotor(PluggedDevice):
     """ The root class containing definitions shared by the different types of motors
     provided in this module.
 
     :py:attr:`SYSTEM_CLASS_NAME` and :py:attr:`SYSTEM_DEVICE_NAME_CONVENTION` must be defined by
     concrete sub-classes to allow the binding with `/sys/class` tree.
     """
-
-    #: The system class of this device, i.e. the subdirectory of `/sys/class` in which instances
-    #: sub-tree is defined
-    SYSTEM_CLASS_NAME = None
-
-    #: The name or pattern used to identify instances of this device
-    SYSTEM_DEVICE_NAME_CONVENTION = None
-
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        """
-        Args:
-            port (str): the port the motor is connected to. Can be omitted if only one motor is
-                used, since the `Device` initialization will find it by scanning.
-            name (str): the pattern for finding the device entry in `/sys/class`
-            **kwargs: additional arguments passed to super class
-
-        Raises:
-            NotImplementedError: if mandatory constants are not defined
-        """
-        if not (self.SYSTEM_CLASS_NAME and self.SYSTEM_DEVICE_NAME_CONVENTION):
-            raise NotImplementedError()
-
-        if port:
-            kwargs['port_name'] = port
-        super(BaseMotor, self).__init__(self.SYSTEM_CLASS_NAME, name, **kwargs)
 
     @property
     def polarity(self):
@@ -103,7 +78,11 @@ class DcMotor(BaseMotor):
         - `stop` will stop any of the run commands before they are complete using the
           command specified by `stop_command`.
 
-    These commands are available as the constants named `COMMAND_xxx`.
+    These commands are available as the constants named `COMMAND_xxx`. Even if they can
+    be issued by setting the :py:attr:`command` property, the corresponding methods are
+    defined for a more friendly usage. The all accept optional keyword parameters
+    allowing to set device properties before executing the command, thus modifying the
+    behaviour on the fly.
 
     The duty cycle is initialized to 75 so that instances are ready to use after
     their instantiation.
@@ -112,10 +91,14 @@ class DcMotor(BaseMotor):
     SYSTEM_CLASS_NAME = 'dc-motor'
     SYSTEM_DEVICE_NAME_CONVENTION = 'motor*'
 
-    def __init__(self, port=None, name=SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        super(DcMotor, self).__init__(port=port, name=name, **kwargs)
+    def __init__(self, **kwargs):
+        super(DcMotor, self).__init__(**kwargs)
         if 'duty_cycle_sp' not in kwargs:
             self.duty_cycle_sp = 75
+
+    def __del__(self):
+        # ensure the motor is stopped in all cases when we get it out of sight
+        self.stop()
 
     @property
     def duty_cycle(self):
@@ -338,6 +321,11 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
 
     SYSTEM_CLASS_NAME = 'tacho-motor'
     SYSTEM_DEVICE_NAME_CONVENTION = 'motor*'
+
+    DRIVERS = None
+
+    def __init__(self, **kwargs):
+        DcMotor.__init__(self, driver_name=self.DRIVERS, **kwargs)
 
     @property
     def count_per_rot(self):
@@ -567,17 +555,13 @@ class RegulatedMotor(DcMotor, PositionControlMixin):
 class LargeMotor(RegulatedMotor):
     """ EV3 large servo motor.
     """
-
-    def __init__(self, port=None, name=RegulatedMotor.SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        super(LargeMotor, self).__init__(port, name, driver_name=['lego-ev3-l-motor'], **kwargs)
+    DRIVERS = ['lego-ev3-l-motor']
 
 
 class MediumMotor(RegulatedMotor):
     """ EV3 medium servo motor.
     """
-
-    def __init__(self, port=None, name=RegulatedMotor.SYSTEM_DEVICE_NAME_CONVENTION, **kwargs):
-        super(MediumMotor, self).__init__(port, name, driver_name=['lego-ev3-m-motor'], **kwargs)
+    DRIVERS = ['lego-ev3-m-motor']
 
 
 class ServoMotor(BaseMotor, PositionControlMixin):
