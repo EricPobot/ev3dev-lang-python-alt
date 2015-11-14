@@ -76,9 +76,9 @@ class Leds(object):
             group (tuple): a tuple containing the LEDs to be set (ex: :py:attr:`RED`)
             \**kwargs: the attributes and their values
 
-        Example::
+        Example:
 
-            >>> Leds.set(LEFT, brightness_pct=0.5, trigger='timer')
+            Leds.set_attributes(Leds.LEFT, brightness_pct=0.5, trigger='timer')
         """
         for led in group:
             for k in kwargs:
