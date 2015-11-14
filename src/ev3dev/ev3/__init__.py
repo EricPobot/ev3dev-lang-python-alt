@@ -4,4 +4,4 @@ from platform import *
 # care about in which the module they are
 from ..motors import *
 from ..sensors import *
-
+from ..sound import *
