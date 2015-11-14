@@ -67,8 +67,6 @@ class Grabber(object):
         self._screen = Screen()
         self._screen.hide_cursor()
 
-        self._img_terminator = Image.open(os.path.join(os.path.dirname(__file__), 'img', 'terminator.png'))
-
         self._done = False
 
         self._dist_per_pulse = self.WHEEL_DIAMETER * math.pi / self._motors[0].count_per_rot
@@ -90,15 +88,20 @@ class Grabber(object):
 
         self._done = False
 
+    def display_centered_image(self, name):
+        self._screen.clear()
+        img = Image.open(os.path.join(os.path.dirname(__file__), 'img', name + '.png'))
+        self._screen.img.paste(img, tuple((d1 - d0) / 2 for d1, d0 in zip(self._screen.shape, img.size)))
+        self._screen.update()
+
     def run(self):
         self.reset()
 
-        w, h = self._img_terminator.size
-        self._screen.img.paste(self._img_terminator, (0, 0, w, h))
-        self._screen.update()
-
         ev3.Leds.heartbeat(red=1, green=1)
+        self.display_centered_image("smiley-o")
         ev3.Sound.speak("I am calibrating my gripper")
+
+        self.display_centered_image("smiley-busy")
         self._gripper.calibrate()
         self._gripper.open()
 
@@ -108,15 +111,18 @@ class Grabber(object):
         self._done = False
         try:
             while not self._done:
+                self.display_centered_image("smiley-o")
                 LedFeedback.k2000(red=1, green=1)
                 ev3.Sound.speak('Press touch sensor to start')
 
+                self.display_centered_image("smiley-asleep")
                 while not (self._start_btn.is_pressed or self._done):
                     time.sleep(0.1)
                 while self._start_btn.is_pressed and not self._done:
                     time.sleep(0.1)
 
                 if not self._done:
+                    self.display_centered_image("smiley-waiting")
                     LedFeedback.searching()
                     self.grab_a_brick()
 
@@ -124,6 +130,12 @@ class Grabber(object):
             self._buttons.stop_scanner()
 
         ev3.Leds.red_on()
+
+        img = Image.open(os.path.join(os.path.dirname(__file__), 'img', 'terminator.png'))
+        self._screen.clear()
+        self._screen.img.paste(img, (0, 0))
+        self._screen.update()
+
         ev3.Sound.speak("I'll be back")
 
     def grab_a_brick(self):
@@ -137,6 +149,7 @@ class Grabber(object):
         if brick_found:
             brick_color = self.analyze_brick()
             try:
+                self.display_centered_image("smiley-happy")
                 good_one = True
 
                 msg = "this is a %s brick" % {
@@ -146,12 +159,14 @@ class Grabber(object):
                 ev3.Sound.speak(msg)
 
             except KeyError:
+                self.display_centered_image("smiley-wtf")
                 ev3.Sound.speak("I do not know this color")
                 good_one = False
 
             LedFeedback.brick_color(brick_color)
 
         else:
+            self.display_centered_image("smiley-sad")
             ev3.Sound.speak("There is no brick")
             brick_color = None  # we don't need to set it, but it's cleaner
             ev3.Leds.all_off()
@@ -176,6 +191,7 @@ class Grabber(object):
 
             else:
                 self._gripper.open()
+                self.display_centered_image("smiley-o")
                 ev3.Sound.speak("Please take the brick")
 
         else:
