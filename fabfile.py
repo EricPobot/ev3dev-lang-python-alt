@@ -95,8 +95,8 @@ def _archive_name():
 
 
 @task(default=True)
-def make_all():
-    """ Chains all the operations (executed if fab command is used without argument)
+def update():
+    """ Chains all the operations to update the brick (executed if fab command is used without argument)
     """
     egg()
     make_setup()

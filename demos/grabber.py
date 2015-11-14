@@ -72,6 +72,8 @@ class Grabber(object):
         self._dist_per_pulse = self.WHEEL_DIAMETER * math.pi / self._motors[0].count_per_rot
         self._spin_per_pulse = math.degrees(self._dist_per_pulse / self.WHEELS_DIST * 2)
 
+        self._images = dict()
+
     def _back_button_pressed(self, state):
         self._done = True
 
@@ -88,41 +90,52 @@ class Grabber(object):
 
         self._done = False
 
-    def display_centered_image(self, name):
+    def display_image(self, name, centered=True):
+        # cache images to avoid re-reading them for each request
+        # (we use a lazy loading method to avoid too long program
+        # start time if loading all of them on init)
+        try:
+            img = self._images[name]
+        except KeyError:
+            self._images[name] = img = Image.open(os.path.join(os.path.dirname(__file__), 'img', name + '.png'))
+
         self._screen.clear()
-        img = Image.open(os.path.join(os.path.dirname(__file__), 'img', name + '.png'))
-        self._screen.img.paste(img, tuple((d1 - d0) / 2 for d1, d0 in zip(self._screen.shape, img.size)))
+        if centered:
+            xy = tuple((d1 - d0) / 2 for d1, d0 in zip(self._screen.shape, img.size))
+        else:
+            xy = (0, 0)
+        self._screen.img.paste(img, xy)
         self._screen.update()
 
     def run(self):
         self.reset()
 
         ev3.Leds.heartbeat(red=1, green=1)
-        self.display_centered_image("smiley-o")
+        self.display_image("smiley-o")
         ev3.Sound.speak("I am calibrating my gripper")
 
-        self.display_centered_image("smiley-busy")
+        self.display_image("smiley-busy")
         self._gripper.calibrate()
         self._gripper.open()
 
-        ev3.Sound.speak('I am ready')
+        ev3.Sound.speak('I am ready').wait()
         self._buttons.start_scanner()
 
         self._done = False
         try:
             while not self._done:
-                self.display_centered_image("smiley-o")
+                self.display_image("smiley-o")
                 LedFeedback.k2000(red=1, green=1)
-                ev3.Sound.speak('Press touch sensor to start')
+                ev3.Sound.speak('Press touch sensor to start').wait()
 
-                self.display_centered_image("smiley-asleep")
+                self.display_image("smiley-asleep")
                 while not (self._start_btn.is_pressed or self._done):
                     time.sleep(0.1)
                 while self._start_btn.is_pressed and not self._done:
                     time.sleep(0.1)
 
                 if not self._done:
-                    self.display_centered_image("smiley-waiting")
+                    self.display_image("smiley-waiting")
                     LedFeedback.searching()
                     self.grab_a_brick()
 
@@ -131,12 +144,9 @@ class Grabber(object):
 
         ev3.Leds.red_on()
 
-        img = Image.open(os.path.join(os.path.dirname(__file__), 'img', 'terminator.png'))
-        self._screen.clear()
-        self._screen.img.paste(img, (0, 0))
-        self._screen.update()
+        self.display_image('terminator', centered=False)
 
-        ev3.Sound.speak("I'll be back")
+        ev3.Sound.speak("I'll be back").wait()
 
     def grab_a_brick(self):
         # reset encoders
@@ -149,31 +159,30 @@ class Grabber(object):
         if brick_found:
             brick_color = self.analyze_brick()
             try:
-                self.display_centered_image("smiley-happy")
-                good_one = True
-
+                self.display_image("smiley-happy")
                 msg = "this is a %s brick" % {
                     ev3.ColorSensor.COLOR_GREEN: 'green',
                     ev3.ColorSensor.COLOR_RED: 'red',
                 }[brick_color]
-                ev3.Sound.speak(msg)
+                good_one = True
 
             except KeyError:
-                self.display_centered_image("smiley-wtf")
-                ev3.Sound.speak("I do not know this color")
+                self.display_image("smiley-wtf")
+                msg = "I do not know this color"
                 good_one = False
 
+            ev3.Sound.speak(msg).wait()
             LedFeedback.brick_color(brick_color)
 
         else:
-            self.display_centered_image("smiley-sad")
-            ev3.Sound.speak("There is no brick")
+            self.display_image("smiley-sad")
+            ev3.Sound.speak("There is no brick").wait()
             brick_color = None  # we don't need to set it, but it's cleaner
             ev3.Leds.all_off()
 
         # go back home first in any case
         dist = self._motor_left.position * self._dist_per_pulse
-        ev3.Sound.play(os.path.join(_HERE, 'snd', 'backing_alert.rsf'))
+        backing_sound = ev3.Sound.play(os.path.join(_HERE, 'snd', 'backing_alert.rsf'))
         self.drive(-dist)
 
         if brick_found:
@@ -190,14 +199,16 @@ class Grabber(object):
                 self.spin(-turn_direction * 90)
 
             else:
+                backing_sound.wait()
                 self._gripper.open()
-                self.display_centered_image("smiley-o")
-                ev3.Sound.speak("Please take the brick")
+                self.display_image("smiley-o")
+                ev3.Sound.speak("Please take the brick").wait()
 
         else:
             # nothing special to do here
             pass
 
+        backing_sound.wait()
         ev3.Leds.all_off()
 
     def drive_for_ever(self, power_pct=100):
