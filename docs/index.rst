@@ -23,6 +23,7 @@ which does not use the LCD does not need to import the ``ev3dev.display`` module
    mod-sensors
    mod-motors
    mod-display
+   mod-sound
 
 Target support modules
 ----------------------

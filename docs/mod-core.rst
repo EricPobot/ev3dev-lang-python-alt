@@ -19,7 +19,6 @@ Module interface
     Device
     Led
     PowerSupply
-    Sound
     ButtonManagerBase
     ButtonManagerEVIO
 
@@ -35,6 +34,7 @@ Reference
 .. autoclass:: PowerSupply
     :members:
 
+
 .. autoclass:: ButtonManagerBase
     :members:
     :inherited-members:
@@ -42,6 +42,3 @@ Reference
 .. autoclass:: ButtonManagerEVIO
     :members:
     :inherited-members:
-
-.. autoclass:: Sound
-    :members:

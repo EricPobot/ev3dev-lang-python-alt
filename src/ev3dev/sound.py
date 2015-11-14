@@ -31,9 +31,12 @@
     - playing sound files
     - speaking
 
-Writing songs played with tones is made simpler by using the The :py:attr:`NOTES`
-and The :py:attr:`DURATIONS` tables, providing natural naming of notes (e.g. `A4`
-instead of `440`) and duration multipliers (e.g. 'Q' for quarter)
+.. note::
+
+    Writing songs played with tones is made simpler by using the the :py:meth:`Sound.play_song`
+    which supports symbolic notes (e.g. ``A4``, ``D#3``, ``Gb5``) and durations (e.g. ``q``, ``h``).
+
+    Refer to :py:attr:`NOTE_FREQUENCIES` and :py:attr:`NOTE_VALUES` for details
 """
 
 import os
@@ -57,11 +60,6 @@ class Sound(object):
         >>>
         >>> # Introduce yourself, wait for completion:
         >>> Sound.speak('Hello, I am Robot').wait()
-
-    .. note::
-
-        RSF LEGO sound files are supported by the :py:meth:`play` method, so it is
-        possible to use the ones provided with the MINDSTORMS graphical environment.
     """
 
     @staticmethod
@@ -73,7 +71,12 @@ class Sound(object):
             args (str): arguments passed to the `beep` command
 
         Returns:
-            :py:class:`subprocess.Popen`: the spawn subprocess
+            subprocess.Popen: the spawn subprocess
+
+        .. note::
+
+            The :py:meth:`play_song` is more friendly for song playing, since the
+            melody is defined with note names and symbolic durations.
 
         .. _`beep man page`: http://manpages.debian.org/cgi-bin/man.cgi?query=beep
         """
@@ -129,14 +132,14 @@ class Sound(object):
         """
         def play_tone_sequence(tone_sequence):
             def beep_args(frequency=None, duration=None, delay=None):
-                _args = '-n '
+                _args = ''
                 if frequency is not None: _args += '-f %s ' % frequency
                 if duration  is not None: _args += '-l %s ' % duration
-                if delay     is not None: _args += '-d %s ' % delay
+                if delay     is not None: _args += '-D %s ' % delay
 
                 return _args
 
-            return Sound.beep(' '.join([beep_args(*t) for t in tone_sequence]))
+            return Sound.beep(' -n '.join([beep_args(*t) for t in tone_sequence]))
 
         if len(args) == 1:
             return play_tone_sequence(args[0])
@@ -152,7 +155,12 @@ class Sound(object):
         Args:
             wav_file (str): the path of the WAV file
         Returns:
-            :py:class:`subprocess.Popen`: the spawn subprocess
+            subprocess.Popen: the spawn subprocess
+
+        .. note::
+
+            RSF LEGO sound files are supported by this method, so it is
+            possible to use the ones included in the MINDSTORMS graphical environment.
         """
         return subprocess.Popen('/usr/bin/aplay "%s" > /dev/null 2>&1' % wav_file, shell=True)
 
@@ -164,20 +172,20 @@ class Sound(object):
         Note names and values are defined by the :py:attr:`NOTES` and :py:attr:`NOTE_VALUES`
         dictionaries. The value can be suffixed by modifiers:
 
-        - a /divider/ introduced by a `/` to obtain triplets for instance
-            (e.g. `q/3` for a triplet of eight note)
-        - a /multiplier/ introduced by `*` (e.g. `*1.5` is a dotted note).
+        - a *divider* introduced by a ``/`` to obtain triplets for instance
+          (e.g. ``q/3`` for a triplet of eight note)
+        - a *multiplier* introduced by ``*`` (e.g. ``*1.5`` is a dotted note).
 
         Shortcuts exist for common modifiers:
 
-        - `3` produces a triplet member note. For instance `e3` gives a triplet of eight notes,
-            i.e. 3 eight notes in the duration of a single quarter. You must ensure that 3 triplets
-            notes are defined in sequence to match the count, otherwise the result will not be the
-            expected one.
-        - `.` produces a dotted note, i.e. which duration is one and a half the base one. Double dots
-            are not currently supported.
+        - ``3`` produces a triplet member note. For instance `e3` gives a triplet of eight notes,
+          i.e. 3 eight notes in the duration of a single quarter. You must ensure that 3 triplets
+          notes are defined in sequence to match the count, otherwise the result will not be the
+          expected one.
+        - ``.`` produces a dotted note, i.e. which duration is one and a half the base one. Double dots
+          are not currently supported.
 
-        .. example::
+        Example::
 
             >>> # A long time ago in a galaxy far,
             >>> # far away...
@@ -213,7 +221,7 @@ class Sound(object):
             delay (int): delay in ms between notes
 
         Returns:
-            :py:class:`subprocess.Popen`: the spawn subprocess
+            subprocess.Popen: the spawn subprocess
         """
         meas_duration = 60000 / tempo * 4
 
@@ -225,9 +233,9 @@ class Sound(object):
                 note (str): the note note and octave
                 value (str): the note value expression
             Returns:
-                (str): the arguments to be passed to the beep command
+                str: the arguments to be passed to the beep command
             """
-            freq = NOTES[note.upper()]
+            freq = NOTE_FREQUENCIES[note.upper()]
             if '/' in value:
                 base, factor = value.split('/')
                 duration = meas_duration * NOTE_VALUES[base] / float(factor)
@@ -261,7 +269,7 @@ class Sound(object):
             espeak_options (str): additional espeak options, as described in documentation
 
         Returns:
-            :py:class:`subprocess.Popen`: the spawn subprocess
+            subprocess.Popen: the spawn subprocess
         """
         return subprocess.Popen(
             '/usr/bin/espeak -a %(amplitude)d -s %(speed)d -v %(voice)s %(opts)s --stdout "%(text)s" | '
@@ -285,16 +293,17 @@ def _make_scales(notes):
     return res
 
 
-#: Note names
+#: Note frequencies.
 #:
-#: Aliases such as `D#0/Eb0` are expanded as the two corresponding
-#: note names, and frequencies are rounded to the nearest integer
-#: value, since the core beep function accepts integral frequencies only.
-NOTES = _make_scales((
+#: This dictionary gives the rounded frequency of a note specified by its
+#: standard US abbreviation and its octave number (e.g. ``C3``).
+#: Alterations use the ``#`` and ``b`` symbols, respectively for
+#: *sharp* and *flat*, between the note code and the octave number (e.g. ``D#4``, ``Gb5``).
+NOTE_FREQUENCIES = _make_scales((
     ('C0', 16.35), 
     ('C#0/Db0', 17.32),
     ('D0', 18.35),
-    ('D#0/Eb0', 19.45),
+    ('D#0/Eb0', 19.45),     # expanded in one entry per symbol by _make_scales
     ('E0', 20.60),
     ('F0', 21.83),
     ('F#0/Gb0', 23.12),
@@ -401,17 +410,30 @@ NOTES = _make_scales((
     ('B8', 7902.13)
 ))
 
-#: Common note values
+#: Common note values.
 #:
 #: See https://en.wikipedia.org/wiki/Note_value
 #:
+#: This dictionary provides the multiplier to be applied to de whole note duration
+#: to obtain subdivisions, given the corresponding symbolic identifier:
+#:
+#:  = ===============================
+#:  w whole note (UK: semibreve)
+#:  h half note (UK: minim)
+#:  q quarter note (UK: crotchet)
+#:  e eight note (UK: quaver)
+#:  s sixteenth note (UK: semiquaver)
+#:  = ===============================
+#:
+#:
 #: Triplets can be obtained by dividing the corresponding reference by 3.
-#: For instance, the note value of a eight triplet will be:
-#: >>> NOTE_VALUE['e'] / 3
+#: For instance, the note value of a eight triplet will be ``NOTE_VALUE['e'] / 3``.
+#: It is simpler however to user the ``3`` modifier of notes, as supported by the
+#: :py:meth:`Sound.play_song` method.
 NOTE_VALUES = {
-    'w': 1.,        # whole note or semibreve
-    'h': 1./2,      # half note or minim
-    'q': 1./4,      # quarter note or crotchet
-    'e': 1./8,      # eight note or quaver
-    's': 1./16,     # sixteenth or semiquaver
+    'w': 1.,
+    'h': 1./2,
+    'q': 1./4,
+    'e': 1./8,
+    's': 1./16,
 }

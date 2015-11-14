@@ -5,9 +5,9 @@ This is an alternative version of the ev3dev_ Python binding, written without us
 
 In addition to the library, you'll find :
 
-* small and not small demonstration programs in the ``demos`` sub-directory
-* Sphinx generated documentation in the ``demoss`` sub-directory, including
-the demonstrator ones
+    - small and not small demonstration programs in the ``demos`` sub-directory
+    - Sphinx generated documentation in the ``demos`` sub-directory,
+      including the demonstrator ones
 
 Automation
 ----------
