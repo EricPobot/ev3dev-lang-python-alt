@@ -22,7 +22,7 @@
 # THE SOFTWARE.
 # -----------------------------------------------------------------------------
 
-""" An assortment of classes modeling specific features of the EV3 brick.
+""" An assortment of definitions modeling specific features of the EV3 brick.
 """
 
 from ..core import *
