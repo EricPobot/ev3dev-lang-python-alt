@@ -26,9 +26,13 @@ Fabric (http://www.fabfile.org/) file to automate operations for building
 the distribution archive, uploading it to the brick and installing there.
 """
 
+import os
+
 from fabric.api import env, put, sudo, run, local, task, prefix, lcd
 
 from git_version import git_version
+
+_HERE = os.path.dirname(__file__)
 
 # change the hostname of the EV3 if needed
 env.hosts = ['ev3dev']
@@ -154,4 +158,4 @@ def doc():
 
 @task
 def demos():
-    put('demos/', mirror_local_mode=True)
+    put(os.path.join(_HERE, 'demos/'), mirror_local_mode=True)
