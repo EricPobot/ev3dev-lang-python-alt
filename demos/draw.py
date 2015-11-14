@@ -36,7 +36,7 @@ screen.hide_cursor()
 
 w, h = screen.shape
 
-for image_file in ('tux.png', 'pobot.png'):
+for image_file in ('tux.png', 'pobot.png', 'smiley.png'):
     decal = Image.open(os.path.join(os.path.dirname(__file__), 'img', image_file))
     iw, ih = decal.size
 
