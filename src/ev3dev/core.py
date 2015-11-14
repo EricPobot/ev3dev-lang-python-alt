@@ -764,7 +764,7 @@ class PowerSupply(Device):
 
 class LegoPort(PluggedDevice):
     """
-    The `lego-port` class provides an interface for working with input and
+    The `lego_port` sysclass provides an interface for working with input and
     output ports that are compatible with LEGO MINDSTORMS RCX/NXT/EV3, LEGO
     WeDo and LEGO Power Functions sensors and motors. Supported devices include
     the LEGO MINDSTORMS EV3 Intelligent Brick, the LEGO WeDo USB hub and
@@ -852,7 +852,7 @@ class LegoPort(PluggedDevice):
 class Sound(object):
     """ Sound-related functions. The class has only static methods and is not
     intended for instantiation. It can beep, play wav files, or convert text to
-    speech.
+    speech and speak them.
 
     Note that all methods of the class spawn system processes and return
     :py:class:`subprocess.Popen` objects. The methods are asynchronous (they return
@@ -876,10 +876,13 @@ class Sound(object):
         Args:
             args (str): arguments passed to the `beep` command
 
+        Returns:
+            :py:class:`subprocess.Popen`: the spawn subprocess
+
         .. _`beep man page`: http://manpages.debian.org/cgi-bin/man.cgi?query=beep
         """
         with open(os.devnull, 'w') as n:
-            return subprocess.call('/usr/bin/beep %s' % args, stdout=n, shell=True)
+            return subprocess.Popen('/usr/bin/beep %s' % args, stdout=n, shell=True)
 
     @staticmethod
     def tone(*args):
@@ -890,6 +893,9 @@ class Sound(object):
         Args:
             frequency (int): tone frequency (Hz)
             duration (int): tone duration (ms)
+
+        Returns:
+            :py:class:`subprocess.Popen`: the spawn subprocess
 
         Simple example::
 
@@ -944,18 +950,16 @@ class Sound(object):
             raise Exception("Unsupported number of parameters in Sound.tone()")
 
     @staticmethod
-    def play(wav_file, wait=True):
+    def play(wav_file):
         """ Plays a WAV file.
 
         Args:
             wav_file (str): the path of the WAV file
-             wait (bool): if True (default), wait for the play is complete
         """
-        meth = subprocess.call if wait else subprocess.Popen
-        return meth('/usr/bin/aplay "%s" > /dev/null 2>&1' % wav_file, shell=True)
+        return subprocess.Popen('/usr/bin/aplay "%s" > /dev/null 2>&1' % wav_file, shell=True)
 
     @staticmethod
-    def speak(text, amplitude=200, speed=150, voice='en', espeak_options='', wait=True):
+    def speak(text, amplitude=200, speed=150, voice='en', espeak_options=''):
         """ Speaks the given text aloud.
 
         Args:
@@ -964,10 +968,11 @@ class Sound(object):
             speed (int): speech speed, in words per minute. Default to 175
             voice (str): the voice code (see content of `espeak-data/voices` for the list). Default to `en`
             espeak_options (str): additional espeak options, as described in documentation
-            wait (bool): if True (default), wait for the speech is complete
+
+        Returns:
+            :py:class:`subprocess.Popen`: the spawn subprocess
         """
-        meth = subprocess.call if wait else subprocess.Popen
-        return meth(
+        return subprocess.Popen(
             '/usr/bin/espeak -a %(amplitude)d -s %(speed)d -v %(voice)s %(opts)s --stdout "%(text)s" | '
             '/usr/bin/aplay > /dev/null 2>&1' %
             {
