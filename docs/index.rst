@@ -1,6 +1,8 @@
 .. python-ev3dev documentation master file
 
-.. include:: ../README.rst
+An alternative version of the ev3dev_ Python binding, written without using autogen.
+
+.. _ev3dev: http://ev3dev.org
 
 Target independent modules
 --------------------------
@@ -36,6 +38,16 @@ based on their individual features and characteristics.
 
    mod-ev3
    mod-brickpi
+
+Extensions
+----------
+
+These modules and packages are extensions to the base services.
+
+.. toctree::
+   :maxdepth: 1
+
+   mod-navigation
 
 Demos
 -----
