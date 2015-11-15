@@ -59,8 +59,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'python-ev3dev'
-copyright = '2015, Ralph Hempel et al'
-author = 'Ralph Hempel et al'
+author = 'Eric Pascual'
+copyright = '2015, ' + author
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -237,7 +237,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   (master_doc, 'python-ev3dev.tex', 'python-ev3dev Documentation',
-   'Ralph Hempel et al', 'manual'),
+   author, 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
