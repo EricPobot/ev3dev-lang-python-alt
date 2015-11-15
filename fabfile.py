@@ -66,6 +66,8 @@ pkg_meta = {
     }
 }
 
+DIST_REMOTE_DIR = 'dist/'
+
 
 def _get_pkg_infos():
     """ Returns a dictionary containing the setup() function arguments.
@@ -139,14 +141,18 @@ def build():
 def deploy():
     """ Deploys the distribution archive
     """
-    put('dist/%s' % _archive_name())
+    put(
+        local_path='dist/%s' % _archive_name(),
+        remote_path=DIST_REMOTE_DIR,
+        mirror_local_mode=True
+    )
 
 
 @task
 def install():
     """ Installs the package on the EV3
     """
-    cmde = pkg_meta[env.pkg_format]['install_cmd'] % _archive_name()
+    cmde = pkg_meta[env.pkg_format]['install_cmd'] % os.path.join(DIST_REMOTE_DIR, _archive_name())
     sudo(cmde)
 
 
