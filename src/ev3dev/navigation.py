@@ -191,8 +191,7 @@ class DifferentialPilot(BasePilot):
             m.speed_regulation_enabled = m.SPEED_REGULATION_ON
             m.speed_sp = pulses_per_sec
 
-        for m in self._motors:
-            m.command = m.COMMAND_RUN_FOREVER
+        self._motors_sync_start()
 
     def forward(self, speed=None):
         """ Travels forward, no matter is the speed sign.
@@ -213,6 +212,15 @@ class DifferentialPilot(BasePilot):
         """
         for m in self._motors:
             m.stop(stop_command=stop_command)
+
+    def _motors_sync_start(self, command):
+        """ Internal method used to start the motors in sync
+
+        Args:
+            command (str): the start command to be used (one of `COMMAND_RUN_xxx`)
+        """
+        for m in self._motors:
+            m.command = command
 
     def travel(self, distance, speed=None, on_start=None, on_complete=None, on_stalled=None, callback_args=None):
         """ Travels for the specified distance at a given speed.
@@ -263,8 +271,7 @@ class DifferentialPilot(BasePilot):
             m.speed_regulation_enabled = RegulatedMotor.SPEED_REGULATION_ON
             m.speed_sp = pulses_per_sec
 
-        for m in self._motors:
-            m.command = m.COMMAND_RUN_TO_REL_POS
+        self._motors_sync_start(RegulatedMotor.COMMAND_RUN_TO_REL_POS)
 
         monitor = MotionMonitor(self,
                                 on_start=on_start,
@@ -279,7 +286,7 @@ class DifferentialPilot(BasePilot):
     def rotate(self, angle, speed=None, on_start=None, on_complete=None, on_stalled=None, callback_args=None):
         """ Rotates for the specified amount of degrees.
 
-        Positive angles are counted CCW, negative ones CW. Callbacks mechanism is the same as for :py:meth:`travel`
+        Positive angles are counted CCW, negative ones CW. Callbacks mechanism is the same as for :py:meth:`travel`.
 
         Args:
             angle (float): the number of degrees to rotate
@@ -292,18 +299,17 @@ class DifferentialPilot(BasePilot):
         Returns:
             MotionMonitor: the motion monitoring object
         """
-        pulses = round(angle / self._rotation_per_pulse)
         pulses_per_sec = self._pulses_per_sec_angular(speed or self._rotate_speed)
 
         for m in self._motors:
             m.speed_regulation_enabled = m.SPEED_REGULATION_ON
             m.speed_sp = pulses_per_sec
 
+        pulses = round(angle / self._rotation_per_pulse)
         self._left_motor.position_sp = -pulses
         self._right_motor.position_sp = pulses
 
-        for m in self._motors:
-            m.command = m.COMMAND_RUN_TO_REL_POS
+        self._motors_sync_start(RegulatedMotor.COMMAND_RUN_TO_REL_POS)
 
         monitor = MotionMonitor(self,
                                 on_start=on_start,
@@ -314,6 +320,20 @@ class DifferentialPilot(BasePilot):
         monitor.start()
 
         return monitor
+
+    def rotate_forever(self, speed):
+        """ Rotates in place forever.
+
+        Args:
+            speed (float): the rotation speed in degrees per second. Positive speed turns CCW, negative CW.
+        """
+        pulses_per_sec = self._pulses_per_sec_angular(speed)
+
+        for m, direction in zip(self._motors, (-1, +1)):
+            m.speed_regulation_enabled = m.SPEED_REGULATION_ON
+            m.speed_sp = pulses_per_sec * direction
+
+        self._motors_sync_start(RegulatedMotor.COMMAND_RUN_FOREVER)
 
     def rotate_right(self, angle, **kwargs):
         """ Convenience shortcut to avoid taking care of the angle sign.
@@ -383,8 +403,7 @@ class DifferentialPilot(BasePilot):
             m.speed_sp = self._pulses_per_sec_linear(s)
             m.position_sp = d / self._dist_per_pulse
 
-        for m in self._motors:
-            m.command = m.COMMAND_RUN_TO_REL_POS
+        self._motors_sync_start(RegulatedMotor.COMMAND_RUN_TO_REL_POS)
 
         monitor = MotionMonitor(self,
                                 on_start=on_start,
@@ -396,7 +415,8 @@ class DifferentialPilot(BasePilot):
 
         return monitor
 
-    def travel_arc(self, radius, distance, speed=None, on_start=None, on_complete=None, on_stalled=None, callback_args=None):
+    def travel_arc(self, radius, distance, speed=None,
+                   on_start=None, on_complete=None, on_stalled=None, callback_args=None):
         """ Similar to :py:meth:`arc` but specifying the distance along the arc instead of the turn angle.
         """
         if radius == 0:
@@ -413,11 +433,64 @@ class DifferentialPilot(BasePilot):
             callback_args=callback_args
         )
 
-    def coast(self):
-        """ Remove power from motors.
+    def steer(self, turn_rate, speed=None):
+        """ Starts the robot moving forward along a curved path. This method is similar to the :py:meth:`arc`
+        except it uses the `turn_rate` parameter do determine the curvature of the path and therefore has
+        the ability to drive straight.
+
+        `turn_rate` specifies the sharpness of the turn. Use values between -200 and +200.
+        A positive (resp. negative) value means that the center of the turn is on the left (resp. right).
+
+        This parameter determines the ratio of inner wheel speed to outer wheel speed as a percent.
+        The formula used is : `ratio = 100 - abs(turn_rate)`. When `turn_rate` absolute value is greater than
+        200, the ratio becomes negative, which means that the wheels will turn in opposite directions.
+        The extreme values (-200 and +200) result in the robot turning in place (i.e. spinning on itself).
+
+        Args:
+            turn_rate (float): path turn rate
+            speed (float): optional travel speed, used to override locally the current value
+                of :py:attr:`travel_speed`. If positive (resp. negative), the robot moves forward (resp. backward)
         """
-        for m in self._motors:
-            m.stop(stop_command=m.STOP_COMMAND_COAST)
+        if not turn_rate:
+            self.drive(speed)
+
+        else:
+            # clip parameter in [-200, +200] range
+            turn_rate = min(max(turn_rate, -200), 200)
+
+            if abs(turn_rate) == 200:
+                self.rotate_forever(speed)
+
+            else:
+                ratio = float(100 - abs(turn_rate))
+                if turn_rate > 0:
+                    speeds = speed * ratio, speed   # left turn => right wheel is the fastest and runs at 'speed'
+                else:
+                    speeds = speed, speed * ratio
+
+                for m, s in zip(self._motors, speeds):
+                    m.speed_regulation_enabled = m.SPEED_REGULATION_ON
+                    m.speed_sp = self._pulses_per_sec_linear(s)
+
+                self._motors_sync_start(RegulatedMotor.COMMAND_RUN_FOREVER)
+
+    def steer_angle(self, turn_rate, angle, speed=None,
+                    on_start=None, on_complete=None, on_stalled=None, callback_args=None):
+        """ Same as :py:meth:`steer`, but ends the move after the robot has turned a given angle.
+
+        Since the steering direction is defined by the turn rate, the sign of the angle is
+        ignored.
+
+        Args:
+            turn_rate (float): see :py:meth:`steer`
+            angle (float): steer angle in degrees
+            speed (float): see :py:meth:`steer`
+            on_start, on_complete, on_stalled, callback_args: see :py:meth:`steer`
+
+        Returns:
+            MotionMonitor: the motion monitoring object
+        """
+        # TODO compute the radius based on the turn rate and fall back to :py:meth:`arc`
 
 
 class MotionMonitor(threading.Thread):
@@ -480,7 +553,7 @@ class MotionMonitor(threading.Thread):
             delay (float): the maximum wait time, in seconds.
         Returns:
             the instance, so the call can be chained with the motion command,
-            while still returning the monitor to the called
+            while still returning the monitor to the caller
         """
         self.join(delay)
         if self.is_alive():
@@ -523,3 +596,22 @@ class MotionMonitor(threading.Thread):
 
             prev_positions = [p for _, p in s_p]
             time.sleep(0.1)
+
+
+class NullMotionMonitor(object):
+    """ A dummy monitor imitating real ones methods and used for handling special
+    cases resulting in null motions.
+    """
+    def wait(self, *kwargs):
+        return self
+
+    def stop(self):
+        pass
+
+    @property
+    def running(self):
+        return False
+
+    @property
+    def stalled(self):
+        return False
