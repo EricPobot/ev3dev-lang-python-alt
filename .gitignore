@@ -62,5 +62,4 @@ target/
 # Created by .ignore support plugin (hsz.mobi)
 .idea
 .fab_tasks*
-RELEASE-VERSION
 setup.py
