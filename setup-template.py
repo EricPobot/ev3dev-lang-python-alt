@@ -2,6 +2,7 @@ from setuptools import setup
 
 setup(
     name='python-ev3dev-ep',
+    namespace_packages=['ev3dev'],
     version='%(version)s',
     description='Python language bindings for ev3dev',
     author='Eric Pascual',

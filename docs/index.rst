@@ -39,16 +39,6 @@ based on their individual features and characteristics.
    mod-ev3
    mod-brickpi
 
-Extensions
-----------
-
-These modules and packages are extensions to the base services.
-
-.. toctree::
-   :maxdepth: 1
-
-   mod-navigation
-
 Demos
 -----
 
