@@ -63,3 +63,4 @@ target/
 .idea
 .fab_tasks*
 setup.py
+RELEASE-VERSION
