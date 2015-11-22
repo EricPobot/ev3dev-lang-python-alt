@@ -53,7 +53,7 @@ Documentation
 A detailed Sphinx_ generated documentation is provided in the ``docs`` sub-tree. To generate
 it, you can either execute ``make html`` from the ``docs`` subdir, or more conveniently
 use the ``fab doc`` command which will take care of going to the right place and issue the
-`make` from there.
+``make`` from there.
 
 .. _ev3dev: http://ev3dev.org
 .. _Sphinx: http://sphinx-doc.org/
