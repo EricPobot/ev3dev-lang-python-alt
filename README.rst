@@ -47,5 +47,14 @@ hostname overrides in a plain Python file name ``fabconfig.py`` located in the s
 If it exists, it is imported after the definitions of environment variables and before the tasks
 definitions.
 
+Documentation
+-------------
+
+A detailed Sphinx_ generated documentation is provided in the ``docs`` sub-tree. To generate
+it, you can either execute ``make html`` from the ``docs`` subdir, or more conveniently
+use the ``fab doc`` command which will take care of going to the right place and issue the
+`make` from there.
+
 .. _ev3dev: http://ev3dev.org
+.. _Sphinx: http://sphinx-doc.org/
 
