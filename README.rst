@@ -5,9 +5,9 @@ This is an alternative version of the ev3dev_ Python binding, written without us
 
 In addition to the library, you'll find :
 
-    - small and not small demonstration programs in the ``demos`` sub-directory
-    - Sphinx generated documentation in the ``demos`` sub-directory,
-      including the demonstrator ones
+- small and not small demonstration programs in the ``demos`` sub-directory
+- Sphinx generated documentation in the ``demos`` sub-directory,
+  including the demonstrator ones
 
 Automation
 ----------
@@ -17,8 +17,9 @@ available tasks are :
 
 make_setup
     generates the effective ``setup.py`` file, using the ``setup-template.py`` template.
-    It updates the version setting using available git tags. This is done this way so
-    that the setup script can be run on the target, where git context is not available.
+    It updates the version setting using available git tags. This is done this way
+    (rather that keeping the original call to ``git_version`` so that the setup script
+    can be run on the target too, where the git context is normally not available.
 
 build
     builds the distribution package, according to the format specified in the
