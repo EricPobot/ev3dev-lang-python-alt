@@ -253,6 +253,7 @@ class Device(object):
 
     def _set_attribute(self, attribute, value):
         """ Internal device attribute setter """
+        # print('_set_attribute(%s, %s)' % (attribute, value))
         self._attribute_cache.write(attribute, value)
 
     # TODO do we really need these get/set_attr_xxx methods in Python ?
