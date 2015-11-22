@@ -150,7 +150,7 @@ def deploy():
     """ Deploys the distribution archive
     """
     put(
-        local_path='dist/%s' % _archive_name(),
+        local_path=os.path.join(PROJECT_ROOT, 'dist', _archive_name()),
         remote_path=DIST_REMOTE_DIR,
         mirror_local_mode=True
     )
@@ -166,7 +166,7 @@ def install():
 
 @task
 def doc():
-    with lcd('docs'):
+    with lcd(os.path.join(PROJECT_ROOT, 'docs')):
         local('make clean html')
 
 
