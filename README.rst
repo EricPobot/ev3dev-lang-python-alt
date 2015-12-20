@@ -1,3 +1,11 @@
+IMPORTANT NOTICE
+===================================
+
+This repository was an attempt for proposing an alternative option for the ev3dev Python binding. This is the reason why it uses the same names of packages et al. 
+
+**It must not be considered as part of the officiel ev3dev track, but only as a different approach of the implementation.**
+
+
 Python language bindings for ev3dev
 ===================================
 
